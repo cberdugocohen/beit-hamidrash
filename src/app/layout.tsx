@@ -10,6 +10,7 @@ export const metadata: Metadata = {
     description: "מערכת למידה עם גיימיפיקציה - שיעורי תורה, דרש, זוהר וחסידות",
     locale: "he_IL",
     type: "website",
+    images: [{ url: "/og-image.svg", width: 1200, height: 630, alt: "בית המדרש קשר השותפות" }],
   },
   manifest: "/manifest.json",
 };
