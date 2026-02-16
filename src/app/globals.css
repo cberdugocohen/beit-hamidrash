@@ -1,0 +1,124 @@
+@import "tailwindcss";
+
+@theme {
+  --color-gold-50: #fdf8e8;
+  --color-gold-100: #faefc5;
+  --color-gold-200: #f5df8a;
+  --color-gold-300: #efc94b;
+  --color-gold-400: #e6b91e;
+  --color-gold-500: #c99a0e;
+  --color-gold-600: #a67908;
+  --color-gold-700: #7d5a0a;
+  --color-gold-800: #5c420e;
+  --color-gold-900: #3d2c0d;
+
+  --color-torah-50: #f0f4ff;
+  --color-torah-100: #dce4ff;
+  --color-torah-200: #b9c9ff;
+  --color-torah-300: #8ba3ff;
+  --color-torah-400: #5b7bff;
+  --color-torah-500: #3b5bdb;
+  --color-torah-600: #2e47b0;
+  --color-torah-700: #1e3278;
+  --color-torah-800: #152352;
+  --color-torah-900: #0d1633;
+
+  --color-warm-50: #fef7f0;
+  --color-warm-100: #fdebd6;
+  --color-warm-200: #fad4a8;
+  --color-warm-300: #f5b56e;
+  --color-warm-400: #ed8f36;
+  --color-warm-500: #d97316;
+  --color-warm-600: #b45c0e;
+  --color-warm-700: #8a4510;
+  --color-warm-800: #633214;
+  --color-warm-900: #422112;
+
+  --color-emerald-50: #ecfdf5;
+  --color-emerald-500: #10b981;
+  --color-emerald-600: #059669;
+}
+
+@font-face {
+  font-family: "Heebo";
+  font-style: normal;
+  font-weight: 300 900;
+  font-display: swap;
+  src: url("https://fonts.gstatic.com/s/heebo/v26/NGSpv5_NC0k9P_v6ZUCbLRAHxK1EiSysdUmj.woff2") format("woff2");
+  unicode-range: U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F;
+}
+
+@font-face {
+  font-family: "Heebo";
+  font-style: normal;
+  font-weight: 300 900;
+  font-display: swap;
+  src: url("https://fonts.gstatic.com/s/heebo/v26/NGSpv5_NC0k9P_v6ZUCbLRAHxK1EiSysdUmm.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+body {
+  direction: rtl;
+  font-family: "Heebo", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  background: #f8fafc;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Dark mode overrides */
+.dark body,
+.dark {
+  background: #0f172a;
+  color: #e2e8f0;
+}
+
+.dark .bg-white { background: #1e293b !important; }
+.dark .bg-slate-50 { background: #0f172a !important; }
+.dark .border-slate-200 { border-color: #334155 !important; }
+.dark .border-slate-100 { border-color: #1e293b !important; }
+.dark .text-slate-800 { color: #e2e8f0 !important; }
+.dark .text-slate-700 { color: #cbd5e1 !important; }
+.dark .text-slate-600 { color: #94a3b8 !important; }
+.dark .text-slate-500 { color: #94a3b8 !important; }
+.dark .text-slate-400 { color: #64748b !important; }
+.dark .text-slate-300 { color: #475569 !important; }
+.dark .bg-slate-100 { background: #1e293b !important; }
+.dark .shadow-xl { box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3) !important; }
+.dark .shadow-sm { box-shadow: 0 1px 2px rgba(0,0,0,0.2) !important; }
+.dark .hover\:bg-slate-50:hover { background: #1e293b !important; }
+.dark .hover\:bg-slate-50\/70:hover { background: rgba(30,41,59,0.7) !important; }
+
+/* Dark scrollbar */
+.dark ::-webkit-scrollbar-thumb { background: #475569; }
+.dark ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+/* Smooth transitions */
+* { scroll-behavior: smooth; }
+
+/* Glass effect utility */
+.glass {
+  background: rgba(255,255,255,0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* Gradient text */
+.gradient-text {
+  background: linear-gradient(135deg, #1e3278, #3b5bdb);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Pulse glow for active items */
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(59, 91, 219, 0.2); }
+  50% { box-shadow: 0 0 0 8px rgba(59, 91, 219, 0); }
+}
+.pulse-glow { animation: pulse-glow 2s infinite; }
