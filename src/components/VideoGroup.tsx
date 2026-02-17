@@ -95,8 +95,11 @@ function VideoGroup({
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className={`text-sm truncate ${completed ? "text-slate-400" : isPlaying ? "font-semibold text-torah-700" : "text-slate-700"}`}>
-                    {video.title}
+                  <div className={`text-sm truncate flex items-center gap-1.5 ${completed ? "text-slate-400" : isPlaying ? "font-semibold text-torah-700" : "text-slate-700"}`}>
+                    {video.date > new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10) && (
+                      <span className="text-[9px] font-bold bg-emerald-100 text-emerald-600 px-1.5 py-0.5 rounded-full shrink-0">חדש</span>
+                    )}
+                    <span className="truncate">{video.title}</span>
                   </div>
                   <div className="text-[11px] text-slate-300 mt-0.5 flex items-center gap-2">
                     <span>{video.hebDate}</span>

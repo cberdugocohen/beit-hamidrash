@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1e3a5f"/>
+      <stop offset="100%" stop-color="#152352"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#d4a843"/>
+      <stop offset="100%" stop-color="#b8860b"/>
+    </linearGradient>
+  </defs>
+  <rect width="192" height="192" rx="40" fill="url(#bg)"/>
+  <circle cx="96" cy="82" r="36" fill="url(#gold)" opacity="0.2"/>
+  <text x="96" y="98" text-anchor="middle" font-size="44" font-family="serif" fill="url(#gold)">📖</text>
+  <text x="96" y="145" text-anchor="middle" font-size="16" font-weight="bold" font-family="Arial" fill="white">בית המדרש</text>
+  <text x="96" y="165" text-anchor="middle" font-size="12" font-family="Arial" fill="#d4a843">קשר השותפות</text>
+</svg>
