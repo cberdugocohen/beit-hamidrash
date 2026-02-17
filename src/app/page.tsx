@@ -467,7 +467,7 @@ export default function HomePage() {
         {/* ── Controls Bar ── */}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 mb-6">
           <div className="flex items-center gap-4 flex-wrap">
-            <div className="relative flex-1 min-w-[200px]">
+            <div className="relative flex-1 min-w-0 w-full sm:w-auto">
               <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300" />
               <input
                 type="text"

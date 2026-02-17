@@ -89,7 +89,7 @@ function VideoPlayer({
         </div>
 
         {/* Detail Panel */}
-        <div className="lg:col-span-2 flex flex-col max-h-[540px]">
+        <div className="lg:col-span-2 flex flex-col lg:max-h-[540px]">
           {/* Title */}
           <div className="px-5 py-4 border-b border-slate-100">
             <div className="flex items-start justify-between gap-3">

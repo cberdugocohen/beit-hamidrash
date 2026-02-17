@@ -33,7 +33,7 @@ export default function AchievementsPage() {
         </div>
 
         {/* Summary cards */}
-        <div className="grid grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-8">
           <div className="bg-white rounded-2xl border border-slate-200 p-5 text-center shadow-sm">
             <div className="text-3xl font-extrabold text-torah-600">{earnedBadges.length}</div>
             <div className="text-xs text-slate-400 mt-1">הישגים שנצברו</div>

@@ -31,7 +31,7 @@ export default function HeroCard({
       <div className="absolute bottom-0 right-0 w-56 h-56 bg-white/[0.02] rounded-full translate-x-1/4 translate-y-1/4" />
 
       <div className="relative flex items-start justify-between flex-wrap gap-4">
-        <div className="flex-1 min-w-[200px]">
+        <div className="flex-1 min-w-0">
           <p className="text-white/40 text-sm mb-1">{greeting},</p>
           <h1 className="text-2xl font-extrabold text-white mb-3">{displayName}</h1>
 
@@ -67,7 +67,7 @@ export default function HeroCard({
         </div>
 
         {/* Right side: Daily goal + Progress */}
-        <div className="flex items-center gap-5">
+        <div className="hidden sm:flex items-center gap-5">
           {/* Daily goal */}
           <div className="text-center">
             <div className="relative w-16 h-16 mx-auto mb-1.5">

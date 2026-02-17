@@ -63,7 +63,7 @@ function VideoGroup({
               {groupCompleted}/{videos.length}
             </span>
           )}
-          <div className="w-20 bg-slate-100 rounded-full h-2 overflow-hidden">
+          <div className="hidden sm:block w-20 bg-slate-100 rounded-full h-2 overflow-hidden">
             <div className={`h-full rounded-full transition-all duration-500 ${isAllDone ? "bg-emerald-400" : "bg-torah-400"}`} style={{ width: `${pct}%` }} />
           </div>
           {isCollapsed ? <ChevronDown className="w-5 h-5 text-slate-300" /> : <ChevronUp className="w-5 h-5 text-slate-300" />}
@@ -82,7 +82,7 @@ function VideoGroup({
               <button
                 key={video.id}
                 onClick={() => onSelect(video)}
-                className={`w-full flex items-center gap-3 px-5 py-3 text-right transition-all border-b border-slate-50 last:border-b-0 ${isPlaying ? "bg-torah-50 border-r-[3px] border-r-torah-500" : "hover:bg-slate-50/70"}`}
+                className={`w-full flex items-center gap-2 sm:gap-3 px-3 sm:px-5 py-3 text-right transition-all border-b border-slate-50 last:border-b-0 ${isPlaying ? "bg-torah-50 border-r-[3px] border-r-torah-500" : "hover:bg-slate-50/70"}`}
               >
                 <span className="text-[11px] text-slate-300 w-6 text-center tabular-nums shrink-0">{vi + 1}</span>
                 <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${completed ? "bg-emerald-100" : isPlaying ? "bg-torah-100" : "bg-slate-100"}`}>

@@ -18,10 +18,10 @@ function ShellInner({ children }: { children: ReactNode }) {
       <Sidebar />
       {/* Main content - responsive margin synced with sidebar state */}
       <main
-        className="flex-1 max-md:mr-0 transition-all duration-300"
+        className="flex-1 max-md:!mr-0 transition-all duration-300 overflow-x-hidden"
         style={{ marginRight: sidebarCollapsed ? 72 : 260 }}
       >
-        <div className="p-6 lg:p-8 max-md:pt-16">
+        <div className="p-4 sm:p-6 lg:p-8 pt-16 md:pt-6 lg:pt-8">
           {children}
         </div>
       </main>
