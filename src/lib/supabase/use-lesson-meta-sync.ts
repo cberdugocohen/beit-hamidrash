@@ -10,9 +10,10 @@ import { useLessonMetaStore } from "@/store/lessonMeta";
  * - On mount: load all lesson meta from DB into local store
  * - On admin save: write to DB (if user is admin)
  */
+const supabase = createClient();
+
 export function useLessonMetaSync() {
   const { user, profile } = useAuth();
-  const supabase = createClient();
   const metaStore = useLessonMetaStore();
   const loadedRef = useRef(false);
 
@@ -34,7 +35,7 @@ export function useLessonMetaSync() {
         });
       }
     }
-  }, [supabase, metaStore]);
+  }, [metaStore]);
 
   useEffect(() => {
     if (!loadedRef.current) {
@@ -61,7 +62,7 @@ export function useLessonMetaSync() {
         updated_by: user.id,
         updated_at: new Date().toISOString(),
       }, { onConflict: "video_id" });
-  }, [supabase, user, isAdmin, metaStore]);
+  }, [user, isAdmin, metaStore]);
 
   return { saveMetaToDB, isAdmin };
 }

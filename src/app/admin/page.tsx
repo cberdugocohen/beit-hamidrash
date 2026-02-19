@@ -23,6 +23,8 @@ interface UserRow {
 
 type Tab = "users" | "videos";
 
+const supabase = createClient();
+
 export default function AdminPage() {
   const { user, profile } = useAuth();
   const [tab, setTab] = useState<Tab>("users");
@@ -30,7 +32,6 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [updating, setUpdating] = useState<string | null>(null);
-  const supabase = createClient();
 
   // Video state
   const [videos, setLocalVideos] = useState<Video[]>([]);

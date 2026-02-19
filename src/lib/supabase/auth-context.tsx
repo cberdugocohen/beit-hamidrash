@@ -32,12 +32,13 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
+const supabase = createClient();
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
-  const supabase = createClient();
 
   const fetchProfile = useCallback(async (userId: string) => {
     const { data } = await supabase
@@ -62,14 +63,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     setProfile(data as Profile);
-  }, [supabase]);
+  }, []);
 
   useEffect(() => {
     // Get initial session
-    supabase.auth.getSession().then(({ data: { session: s } }) => {
+    supabase.auth.getSession().then(async ({ data: { session: s } }) => {
       setSession(s);
       setUser(s?.user ?? null);
-      if (s?.user) fetchProfile(s.user.id);
+      if (s?.user) await fetchProfile(s.user.id);
       setLoading(false);
     });
 
@@ -87,7 +88,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     );
 
     return () => subscription.unsubscribe();
-  }, [supabase, fetchProfile]);
+  }, [fetchProfile]);
 
   const signUp = async (email: string, password: string, displayName: string) => {
     const { error } = await supabase.auth.signUp({

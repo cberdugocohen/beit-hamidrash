@@ -14,9 +14,10 @@ import { useGamificationStore } from "@/store/gamification";
  * - On local change: debounce-write to DB
  * - On logout: local store stays (offline-first)
  */
+const supabase = createClient();
+
 export function useSupabaseSync() {
   const { user, profile, updateProfile } = useAuth();
-  const supabase = createClient();
   const store = useGamificationStore();
   const syncedRef = useRef(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -61,7 +62,7 @@ export function useSupabaseSync() {
         });
       }
     }
-  }, [supabase, store, profile]);
+  }, [store, profile]);
 
   // ── Save progress to DB ──
   const saveToDB = useCallback(async (userId: string) => {
@@ -92,7 +93,7 @@ export function useSupabaseSync() {
       earned_badges: state.earnedBadges,
       last_activity_date: state.lastActivityDate || undefined,
     } as any);
-  }, [supabase, updateProfile]);
+  }, [updateProfile]);
 
   // ── On login: load from DB ──
   useEffect(() => {
