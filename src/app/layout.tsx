@@ -3,14 +3,22 @@ import Providers from "@/components/Providers";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://beit-hamidrash.vercel.app"),
   title: "בית המדרש - קשר השותפות",
   description: "מערכת למידה עם גיימיפיקציה - שיעורי תורה, דרש, זוהר וחסידות מפי הרב אסף פלג",
   openGraph: {
     title: "בית המדרש - קשר השותפות",
-    description: "מערכת למידה עם גיימיפיקציה - שיעורי תורה, דרש, זוהר וחסידות",
+    description: "שיעורי תורה, דרש, זוהר וחסידות מפי הרב אסף פלג",
     locale: "he_IL",
     type: "website",
-    images: [{ url: "/og-image.svg", width: 1200, height: 630, alt: "בית המדרש קשר השותפות" }],
+    siteName: "בית המדרש קשר השותפות",
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "בית המדרש קשר השותפות" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "בית המדרש - קשר השותפות",
+    description: "שיעורי תורה, דרש, זוהר וחסידות מפי הרב אסף פלג",
+    images: ["/og-image.png"],
   },
   manifest: "/manifest.json",
 };
