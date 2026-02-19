@@ -4,7 +4,7 @@ import { memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   CheckCircle, Play, Calendar, X, ExternalLink, Save, Pencil,
-  Download, ClipboardList, Presentation, FileText, SkipForward, SkipBack, Award,
+  Download, ClipboardList, Presentation, FileText, SkipForward, SkipBack, Award, Share2,
 } from "lucide-react";
 import { Video } from "@/data/content";
 
@@ -103,9 +103,26 @@ function VideoPlayer({
                   <span className="text-torah-400 font-medium">{video.topic}</span>
                 </div>
               </div>
-              <button onClick={onClose} className="text-slate-300 hover:text-slate-500 transition-colors p-1">
-                <X className="w-5 h-5" />
-              </button>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => {
+                    const url = `${window.location.origin}/lesson/${video.videoId}`;
+                    if (navigator.share) {
+                      navigator.share({ title: video.title, url });
+                    } else {
+                      navigator.clipboard.writeText(url);
+                      alert("הקישור הועתק!");
+                    }
+                  }}
+                  className="text-slate-300 hover:text-torah-500 transition-colors p-1"
+                  title="שתף שיעור"
+                >
+                  <Share2 className="w-4 h-4" />
+                </button>
+                <button onClick={onClose} className="text-slate-300 hover:text-slate-500 transition-colors p-1">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
             </div>
           </div>
 

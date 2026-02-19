@@ -16,6 +16,7 @@ import {
 } from "@/data/content";
 import { useGamificationStore } from "@/store/gamification";
 import { useLessonMetaStore } from "@/store/lessonMeta";
+import { useTopicSettingsStore } from "@/store/topicSettings";
 import { useAuth } from "@/lib/supabase/auth-context";
 import { useLessonMetaSync } from "@/lib/supabase/use-lesson-meta-sync";
 import { useToast } from "@/components/Toast";
@@ -81,6 +82,7 @@ const DAILY_GOAL = 3;
 export default function HomePage() {
   const store = useGamificationStore();
   const metaStore = useLessonMetaStore();
+  const topicSettingsStore = useTopicSettingsStore();
   const { user, profile } = useAuth();
   const { saveMetaToDB } = useLessonMetaSync();
   const { toast } = useToast();
@@ -543,6 +545,7 @@ export default function HomePage() {
               isLessonCompleted={store.isLessonCompleted}
               getMeta={metaStore.getMeta}
               getTopicDot={getTopicDot}
+              getTopicImage={topicSettingsStore.getTopicImage}
               onToggle={toggleGroup}
               onSelect={handleSelectVideo}
             />

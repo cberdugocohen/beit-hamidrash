@@ -114,7 +114,25 @@ CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
--- 6. Indexes for performance
+-- 6. Topic settings (images per topic, admin-managed)
+CREATE TABLE IF NOT EXISTS public.topic_settings (
+  topic TEXT PRIMARY KEY,
+  image_url TEXT,
+  updated_by UUID REFERENCES auth.users(id),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE public.topic_settings ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Anyone can view topic settings"
+  ON public.topic_settings FOR SELECT USING (true);
+
+CREATE POLICY "Admins can manage topic settings"
+  ON public.topic_settings FOR ALL USING (
+    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND is_admin = true)
+  );
+
+-- 7. Indexes for performance
 CREATE INDEX IF NOT EXISTS idx_lesson_progress_user ON public.lesson_progress(user_id);
 CREATE INDEX IF NOT EXISTS idx_lesson_progress_lesson ON public.lesson_progress(lesson_id);
 CREATE INDEX IF NOT EXISTS idx_daily_activities_user ON public.daily_activities(user_id);

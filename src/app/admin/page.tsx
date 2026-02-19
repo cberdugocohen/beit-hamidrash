@@ -8,9 +8,11 @@ import { getAllVideos, setVideos, isLoaded, Video } from "@/data/content";
 import { useState, useEffect, useCallback } from "react";
 import {
   ShieldCheck, ShieldOff, Users, Search, Loader2, ArrowRight,
-  RefreshCw, Video as VideoIcon, Sparkles, BookOpen, Layers,
+  RefreshCw, Video as VideoIcon, Sparkles, BookOpen, Layers, ImageIcon, Save, Trash2,
 } from "lucide-react";
 import Link from "next/link";
+import { useTopicSettingsStore } from "@/store/topicSettings";
+import { useTopicSettingsSync } from "@/lib/supabase/use-topic-settings-sync";
 
 interface UserRow {
   id: string;
@@ -41,6 +43,10 @@ export default function AdminPage() {
 
   const isAdmin = profile?.is_admin ?? false;
   const { toast } = useToast();
+  const topicStore = useTopicSettingsStore();
+  const { saveTopicImage, removeTopicImage: removeTopicImageDB } = useTopicSettingsSync();
+  const [editingTopicImage, setEditingTopicImage] = useState<string | null>(null);
+  const [topicImageUrl, setTopicImageUrl] = useState("");
 
   const loadUsers = useCallback(async () => {
     setLoading(true);
@@ -309,18 +315,83 @@ export default function AdminPage() {
               </div>
             </div>
 
-            {/* Topics breakdown */}
+            {/* Topics breakdown with image management */}
             <div className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 mb-4 shadow-sm">
               <h3 className="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
-                <Layers className="w-4 h-4 text-torah-400" /> התפלגות נושאים
+                <Layers className="w-4 h-4 text-torah-400" /> נושאים ותמונות
               </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {sortedTopics.map(([topic, count]) => (
-                  <div key={topic} className="flex items-center justify-between bg-slate-50 rounded-lg px-3 py-2">
-                    <span className="text-xs text-slate-700 truncate">{topic}</span>
-                    <span className="text-xs font-bold text-torah-600 shrink-0 mr-2">{count}</span>
-                  </div>
-                ))}
+              <div className="space-y-2">
+                {sortedTopics.map(([topic, count]) => {
+                  const currentImage = topicStore.getTopicImage(topic);
+                  const isEditing = editingTopicImage === topic;
+                  return (
+                    <div key={topic} className="bg-slate-50 rounded-lg px-3 py-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 min-w-0">
+                          {currentImage ? (
+                            <img src={currentImage} alt={topic} className="w-8 h-8 rounded object-cover shrink-0" />
+                          ) : (
+                            <div className="w-8 h-8 rounded bg-slate-200 flex items-center justify-center shrink-0">
+                              <ImageIcon className="w-4 h-4 text-slate-400" />
+                            </div>
+                          )}
+                          <span className="text-xs text-slate-700 truncate">{topic}</span>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="text-xs font-bold text-torah-600">{count}</span>
+                          <button
+                            onClick={() => {
+                              if (isEditing) {
+                                setEditingTopicImage(null);
+                              } else {
+                                setEditingTopicImage(topic);
+                                setTopicImageUrl(currentImage || "");
+                              }
+                            }}
+                            className="text-xs text-slate-400 hover:text-torah-600 transition-colors"
+                          >
+                            <ImageIcon className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                      {isEditing && (
+                        <div className="mt-2 flex items-center gap-2">
+                          <input
+                            value={topicImageUrl}
+                            onChange={(e) => setTopicImageUrl(e.target.value)}
+                            placeholder="הדבק קישור לתמונה..."
+                            className="flex-1 text-xs border border-slate-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-torah-300"
+                            dir="ltr"
+                          />
+                          <button
+                            onClick={() => {
+                              topicStore.setTopicImage(topic, topicImageUrl);
+                              saveTopicImage(topic, topicImageUrl);
+                              setEditingTopicImage(null);
+                              toast("תמונת נושא נשמרה");
+                            }}
+                            className="bg-torah-600 text-white px-2 py-1.5 rounded-lg hover:bg-torah-700 transition-colors"
+                          >
+                            <Save className="w-3.5 h-3.5" />
+                          </button>
+                          {currentImage && (
+                            <button
+                              onClick={() => {
+                                topicStore.removeTopicImage(topic);
+                                removeTopicImageDB(topic);
+                                setEditingTopicImage(null);
+                                toast("תמונת נושא הוסרה");
+                              }}
+                              className="bg-red-50 text-red-500 px-2 py-1.5 rounded-lg hover:bg-red-100 transition-colors"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
 

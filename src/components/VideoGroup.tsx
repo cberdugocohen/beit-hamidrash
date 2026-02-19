@@ -16,13 +16,14 @@ interface VideoGroupProps {
   isLessonCompleted: (id: string) => boolean;
   getMeta: (id: string) => { summary?: string; transcriptUrl?: string; quizUrl?: string; presentationUrl?: string } | undefined;
   getTopicDot: (topic: string) => string;
+  getTopicImage?: (topic: string) => string | undefined;
   onToggle: (key: string) => void;
   onSelect: (video: Video) => void;
 }
 
 function VideoGroup({
   groupKey, videos, groupMode, isCollapsed, selectedVideoId, showDetail,
-  animationDelay, isLessonCompleted, getMeta, getTopicDot, onToggle, onSelect,
+  animationDelay, isLessonCompleted, getMeta, getTopicDot, getTopicImage, onToggle, onSelect,
 }: VideoGroupProps) {
   const groupCompleted = videos.filter((v) => isLessonCompleted(v.id)).length;
   const isAllDone = groupCompleted === videos.length && videos.length > 0;
@@ -42,13 +43,17 @@ function VideoGroup({
         aria-label={`${isCollapsed ? "פתח" : "סגור"} ${groupKey}`}
       >
         <div className="flex items-center gap-3">
-          <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isAllDone ? "bg-emerald-100" : "bg-torah-50"}`}>
-            {groupMode === "topic" ? (
-              <BookOpen className={`w-5 h-5 ${isAllDone ? "text-emerald-600" : "text-torah-400"}`} />
-            ) : (
-              <Calendar className={`w-5 h-5 ${isAllDone ? "text-emerald-600" : "text-torah-400"}`} />
-            )}
-          </div>
+          {groupMode === "topic" && getTopicImage?.(groupKey) ? (
+            <img src={getTopicImage(groupKey)!} alt={groupKey} className="w-10 h-10 rounded-xl object-cover shrink-0" />
+          ) : (
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isAllDone ? "bg-emerald-100" : "bg-torah-50"}`}>
+              {groupMode === "topic" ? (
+                <BookOpen className={`w-5 h-5 ${isAllDone ? "text-emerald-600" : "text-torah-400"}`} />
+              ) : (
+                <Calendar className={`w-5 h-5 ${isAllDone ? "text-emerald-600" : "text-torah-400"}`} />
+              )}
+            </div>
+          )}
           <div className="text-right">
             <div className="flex items-center gap-2">
               {groupMode === "topic" && <span className={`w-2.5 h-2.5 rounded-full ${getTopicDot(groupKey)}`} />}
