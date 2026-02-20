@@ -146,6 +146,23 @@ export default function HomePage() {
           setSyncStatus("error");
         }
         setTimeout(() => { setSyncStatus("idle"); setSyncMsg(""); }, 5000);
+
+        // Auto-generate missing transcripts in background
+        (async () => {
+          try {
+            let remaining = 1;
+            while (remaining > 0) {
+              const r = await fetch("/api/auto-transcripts?limit=2");
+              const d = await r.json();
+              remaining = d.remaining || 0;
+              if (d.generated > 0) {
+                // Reload meta to pick up new transcript URLs
+                metaStore.reloadFromDB?.();
+              }
+              if (d.generated === 0 && d.remaining === 0) break;
+            }
+          } catch { /* background — silent */ }
+        })();
       }
     }
     init();
@@ -261,6 +278,7 @@ export default function HomePage() {
       const data = await res.json();
       if (data.error) {
         toast(data.error);
+        if (data.diagnostics) console.error("Transcript diagnostics:", data.diagnostics);
       } else if (data.url) {
         setEditTranscript(data.url);
         toast(`תמלול PDF נוצר בהצלחה (${data.segments} קטעים) — לחצי שמור`);

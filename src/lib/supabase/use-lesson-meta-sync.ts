@@ -42,7 +42,8 @@ export function useLessonMetaSync() {
       loadedRef.current = true;
       loadAllMeta();
     }
-  }, [loadAllMeta]);
+    metaStore.setReloadFromDB(loadAllMeta);
+  }, [loadAllMeta, metaStore]);
 
   // ── Save meta to DB (admin only) ──
   const saveMetaToDB = useCallback(async (videoId: string) => {

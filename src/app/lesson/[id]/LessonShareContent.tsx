@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, Calendar, Play, FileText, Download, ClipboardList, Presentation, Share2, ExternalLink } from "lucide-react";
+import { BookOpen, Calendar, Play, FileText, Download, ClipboardList, Presentation, Share2, ExternalLink, Printer } from "lucide-react";
 
 interface Video {
   id: string;
@@ -112,21 +112,33 @@ export default function LessonShareContent({ video, meta }: { video: Video; meta
             <h2 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4">חומרי לימוד</h2>
             <div className="space-y-3">
               {meta!.transcript_url && (
-                <a
-                  href={meta!.transcript_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-3 p-3 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-100 transition-all group"
-                >
-                  <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
-                    <Download className="w-5 h-5 text-blue-600" />
+                <div className="p-4 rounded-xl bg-blue-50 border border-blue-100">
+                  <div className="flex items-center gap-2 mb-3">
+                    <FileText className="w-5 h-5 text-blue-600" />
+                    <span className="text-sm font-bold text-blue-700">תמלול השיעור</span>
                   </div>
-                  <div className="flex-1">
-                    <div className="text-sm font-semibold text-slate-700">תמלול השיעור</div>
-                    <div className="text-xs text-slate-400">הורד את התמלול המלא</div>
+                  <div className="flex items-center gap-2">
+                    <a
+                      href={meta!.transcript_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-colors"
+                    >
+                      <Download className="w-4 h-4" /> הורד PDF
+                    </a>
+                    <button
+                      onClick={() => {
+                        const printWin = window.open(meta!.transcript_url!, '_blank');
+                        if (printWin) {
+                          printWin.addEventListener('load', () => { printWin.print(); });
+                        }
+                      }}
+                      className="flex items-center justify-center gap-2 bg-white hover:bg-blue-50 text-blue-600 border border-blue-200 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors"
+                    >
+                      <Printer className="w-4 h-4" /> הדפס
+                    </button>
                   </div>
-                  <ExternalLink className="w-4 h-4 text-slate-300" />
-                </a>
+                </div>
               )}
               {meta!.quiz_url && (
                 <a

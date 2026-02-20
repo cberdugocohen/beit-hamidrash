@@ -72,7 +72,81 @@ interface TranscriptSegment {
   offset: number;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type CaptionTrack = { baseUrl: string; languageCode: string; kind?: string; [k: string]: any };
+
+const diagnostics: string[] = [];
+
+function pickHebrewTrack(tracks: CaptionTrack[]): CaptionTrack {
+  return (
+    tracks.find((t) => (t.languageCode === "he" || t.languageCode === "iw") && t.kind !== "asr") ||
+    tracks.find((t) => t.languageCode === "he" || t.languageCode === "iw") ||
+    tracks[0]
+  );
+}
+
+function parseJson3(text: string): TranscriptSegment[] {
+  try {
+    const data = JSON.parse(text);
+    const events = (data.events || []).filter(
+      (e: { segs?: unknown[] }) => e.segs
+    );
+    return events
+      .map((e: { tStartMs?: number; segs?: { utf8?: string }[] }) => ({
+        text: (e.segs || []).map((s) => s.utf8 || "").join("").trim(),
+        offset: (e.tStartMs || 0) / 1000,
+      }))
+      .filter((s: TranscriptSegment) => s.text.length > 0);
+  } catch {
+    return [];
+  }
+}
+
+function parseXml(xml: string): TranscriptSegment[] {
+  const segments: TranscriptSegment[] = [];
+  const regex = /<text start="([\d.]+)"[^>]*>([\s\S]*?)<\/text>/g;
+  let m;
+  while ((m = regex.exec(xml)) !== null) {
+    const text = m[2]
+      .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
+      .replace(/&#39;/g, "'").replace(/&quot;/g, '"').replace(/<[^>]+>/g, "").trim();
+    if (text) segments.push({ text, offset: parseFloat(m[1]) });
+  }
+  return segments;
+}
+
+async function tryFetchCaptions(track: CaptionTrack, label: string): Promise<TranscriptSegment[]> {
+  // Try json3 format first
+  try {
+    const res = await fetch(track.baseUrl + "&fmt=json3");
+    const text = await res.text();
+    diagnostics.push(`${label} json3: status=${res.status} len=${text.length}`);
+    if (text.length > 10) {
+      const segs = parseJson3(text);
+      if (segs.length > 0) return segs;
+    }
+  } catch (e) {
+    diagnostics.push(`${label} json3 error: ${e instanceof Error ? e.message : "unknown"}`);
+  }
+  // Try XML format
+  try {
+    const res = await fetch(track.baseUrl);
+    const text = await res.text();
+    diagnostics.push(`${label} xml: status=${res.status} len=${text.length}`);
+    if (text.length > 10) {
+      const segs = parseXml(text);
+      if (segs.length > 0) return segs;
+    }
+  } catch (e) {
+    diagnostics.push(`${label} xml error: ${e instanceof Error ? e.message : "unknown"}`);
+  }
+  return [];
+}
+
 async function fetchYouTubeTranscript(videoId: string): Promise<TranscriptSegment[]> {
+  diagnostics.length = 0;
+
+  // Strategy 1: Innertube player API with mobile clients
   for (const client of YT_CLIENTS) {
     try {
       const playerRes = await fetch(
@@ -87,53 +161,107 @@ async function fetchYouTubeTranscript(videoId: string): Promise<TranscriptSegmen
         }
       );
       const playerData = await playerRes.json();
+      const status = playerData.playabilityStatus?.status || "none";
+      const tracks: CaptionTrack[] =
+        playerData.captions?.playerCaptionsTracklistRenderer?.captionTracks || [];
 
-      if (playerData.error || playerData.playabilityStatus?.status !== "OK") {
-        continue;
-      }
+      diagnostics.push(`${client.name}: status=${status} tracks=${tracks.length}`);
 
-      const tracks =
-        playerData.captions?.playerCaptionsTracklistRenderer?.captionTracks;
-      if (!tracks || tracks.length === 0) continue;
+      if (status !== "OK" || tracks.length === 0) continue;
 
-      // Pick Hebrew first, then auto-generated Hebrew, then first available
-      let track =
-        tracks.find(
-          (t: { languageCode: string; kind?: string }) =>
-            (t.languageCode === "he" || t.languageCode === "iw") &&
-            t.kind !== "asr"
-        ) ||
-        tracks.find(
-          (t: { languageCode: string }) =>
-            t.languageCode === "he" || t.languageCode === "iw"
-        ) ||
-        tracks[0];
+      const track = pickHebrewTrack(tracks);
+      diagnostics.push(`${client.name}: using ${track.languageCode}`);
 
-      // Fetch caption content as json3
-      const captionRes = await fetch(track.baseUrl + "&fmt=json3");
-      const captionText = await captionRes.text();
-      if (!captionText || captionText.length === 0) continue;
-
-      const data = JSON.parse(captionText);
-      const events = (data.events || []).filter(
-        (e: { segs?: unknown[] }) => e.segs
-      );
-
-      const segments: TranscriptSegment[] = events
-        .map((e: { tStartMs?: number; segs?: { utf8?: string }[] }) => ({
-          text: (e.segs || [])
-            .map((s) => s.utf8 || "")
-            .join("")
-            .trim(),
-          offset: (e.tStartMs || 0) / 1000,
-        }))
-        .filter((s: TranscriptSegment) => s.text.length > 0);
-
-      if (segments.length > 0) return segments;
-    } catch {
-      continue;
+      const segs = await tryFetchCaptions(track, client.name);
+      if (segs.length > 0) return segs;
+    } catch (e) {
+      diagnostics.push(`${client.name} error: ${e instanceof Error ? e.message : "unknown"}`);
     }
   }
+
+  // Strategy 2: Scrape video page for caption tracks + use cookies
+  try {
+    const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
+    const CONSENT = "SOCS=CAISNQgDEitib3FfaWRlbnRpdHlmcm9udGVuZHVpc2VydmVyXzIwMjMwODI5LjA3X3AxGgJlbiACGgYIgJnSmgY";
+
+    const pageRes = await fetch(`https://www.youtube.com/watch?v=${videoId}`, {
+      headers: { "User-Agent": UA, "Accept-Language": "he,en;q=0.9", "Cookie": CONSENT },
+    });
+    const html = await pageRes.text();
+    const cookies = pageRes.headers.getSetCookie
+      ? [CONSENT, ...pageRes.headers.getSetCookie().map((c: string) => c.split(";")[0])].join("; ")
+      : CONSENT;
+
+    const capMatch = html.match(/"captionTracks":\s*(\[.*?\])/);
+    diagnostics.push(`WebScrape: pageLen=${html.length} hasCaptions=${!!capMatch}`);
+
+    if (capMatch) {
+      const tracks: CaptionTrack[] = JSON.parse(capMatch[1]);
+      if (tracks.length > 0) {
+        const track = pickHebrewTrack(tracks);
+        diagnostics.push(`WebScrape: using ${track.languageCode}`);
+
+        // Try with cookies
+        for (const fmt of ["&fmt=json3", ""]) {
+          try {
+            const res = await fetch(track.baseUrl + fmt, {
+              headers: {
+                "User-Agent": UA,
+                "Cookie": cookies,
+                "Referer": `https://www.youtube.com/watch?v=${videoId}`,
+              },
+            });
+            const text = await res.text();
+            diagnostics.push(`WebScrape${fmt || " xml"}: status=${res.status} len=${text.length}`);
+            if (text.length > 10) {
+              const segs = fmt ? parseJson3(text) : parseXml(text);
+              if (segs.length > 0) return segs;
+            }
+          } catch (e) {
+            diagnostics.push(`WebScrape${fmt} error: ${e instanceof Error ? e.message : "unknown"}`);
+          }
+        }
+      }
+    }
+  } catch (e) {
+    diagnostics.push(`WebScrape error: ${e instanceof Error ? e.message : "unknown"}`);
+  }
+
+  // Strategy 3: Direct timedtext API with YouTube Data API key
+  try {
+    const apiKey = process.env.YOUTUBE_API_KEY;
+    if (apiKey) {
+      const listRes = await fetch(
+        `https://www.googleapis.com/youtube/v3/captions?part=snippet&videoId=${videoId}&key=${apiKey}`
+      );
+      const listData = await listRes.json();
+      const items = listData.items || [];
+      diagnostics.push(`DataAPI: ${items.length} caption tracks`);
+
+      if (items.length > 0) {
+        // Find Hebrew or first
+        const heItem = items.find((i: { snippet: { language: string } }) =>
+          i.snippet.language === "he" || i.snippet.language === "iw"
+        ) || items[0];
+        const lang = heItem.snippet.language;
+        const name = heItem.snippet.name || "";
+
+        // Try timedtext endpoint directly
+        const ttUrl = `https://www.youtube.com/api/timedtext?v=${videoId}&lang=${lang}&name=${encodeURIComponent(name)}&fmt=json3`;
+        const ttRes = await fetch(ttUrl);
+        const ttText = await ttRes.text();
+        diagnostics.push(`TimedText: lang=${lang} status=${ttRes.status} len=${ttText.length}`);
+        if (ttText.length > 10) {
+          const segs = parseJson3(ttText);
+          if (segs.length > 0) return segs;
+        }
+      }
+    }
+  } catch (e) {
+    diagnostics.push(`DataAPI error: ${e instanceof Error ? e.message : "unknown"}`);
+  }
+
+  console.error("Transcript fetch failed for", videoId, "diagnostics:", diagnostics.join(" | "));
   return [];
 }
 
@@ -149,7 +277,10 @@ export async function POST(req: Request) {
     const segments = await fetchYouTubeTranscript(videoId);
 
     if (!segments || segments.length === 0) {
-      return NextResponse.json({ error: "לא נמצא תמלול לסרטון זה" }, { status: 404 });
+      return NextResponse.json({
+        error: "לא נמצא תמלול לסרטון זה",
+        diagnostics: diagnostics.join(" | "),
+      }, { status: 404 });
     }
 
     // 2. Fetch Hebrew font
@@ -332,8 +463,25 @@ export async function POST(req: Request) {
       }
     }
 
+    // 7. Auto-save transcript URL to lesson_meta table
+    const finalUrl = driveUrl || publicUrl;
+    try {
+      await supabase
+        .from("lesson_meta")
+        .upsert(
+          {
+            video_id: videoId,
+            transcript_url: finalUrl,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "video_id", ignoreDuplicates: false }
+        );
+    } catch (dbErr) {
+      console.error("lesson_meta save error:", dbErr);
+    }
+
     return NextResponse.json({
-      url: driveUrl || publicUrl,
+      url: finalUrl,
       supabaseUrl: publicUrl,
       driveUrl: driveUrl || null,
       segments: segments.length,

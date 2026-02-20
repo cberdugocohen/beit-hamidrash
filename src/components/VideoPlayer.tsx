@@ -4,7 +4,7 @@ import { memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   CheckCircle, Play, Calendar, X, ExternalLink, Save, Pencil,
-  Download, ClipboardList, Presentation, FileText, SkipForward, SkipBack, Award, Share2,
+  Download, ClipboardList, Presentation, FileText, SkipForward, SkipBack, Award, Share2, Printer,
 } from "lucide-react";
 import { Video } from "@/data/content";
 
@@ -165,7 +165,33 @@ function VideoPlayer({
               <>
                 <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">חומרי שיעור</h3>
                 {currentMeta?.transcriptUrl && (
-                  <ResourceLink href={currentMeta.transcriptUrl} icon={<Download className="w-4 h-4" />} iconBg="bg-blue-100" iconColor="text-blue-600" title="הורד תמלול" subtitle="תמלול מלא של השיעור" />
+                  <div className="p-3 rounded-xl bg-blue-50/50 border border-blue-100">
+                    <div className="flex items-center gap-2 mb-2">
+                      <FileText className="w-4 h-4 text-blue-600" />
+                      <span className="text-sm font-semibold text-blue-700">תמלול השיעור</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <a
+                        href={currentMeta.transcriptUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-1 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-xs font-medium transition-colors"
+                      >
+                        <Download className="w-3.5 h-3.5" /> הורד PDF
+                      </a>
+                      <button
+                        onClick={() => {
+                          const printWin = window.open(currentMeta.transcriptUrl, '_blank');
+                          if (printWin) {
+                            printWin.addEventListener('load', () => { printWin.print(); });
+                          }
+                        }}
+                        className="flex items-center justify-center gap-2 bg-white hover:bg-blue-50 text-blue-600 border border-blue-200 px-3 py-2 rounded-lg text-xs font-medium transition-colors"
+                      >
+                        <Printer className="w-3.5 h-3.5" /> הדפס
+                      </button>
+                    </div>
+                  </div>
                 )}
                 {currentMeta?.summary && (
                   <div className="p-3 rounded-xl bg-gold-50/50 border border-gold-200/50">
