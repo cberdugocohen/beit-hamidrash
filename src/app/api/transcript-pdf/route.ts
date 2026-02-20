@@ -33,6 +33,110 @@ async function fetchHebrewFont(): Promise<Buffer> {
   return Buffer.from(ab);
 }
 
+// YouTube innertube clients that return working caption URLs
+const YT_CLIENTS = [
+  {
+    name: "IOS",
+    body: {
+      context: {
+        client: {
+          clientName: "IOS",
+          clientVersion: "19.09.3",
+          deviceModel: "iPhone14,3",
+          hl: "he",
+        },
+      },
+    },
+    apiKey: "AIzaSyB-63vPrdThhKuerbB2N_l7Kwwcxj6yUAc",
+    ua: "com.google.ios.youtube/19.09.3 (iPhone14,3; U; CPU iOS 17_4 like Mac OS X)",
+  },
+  {
+    name: "ANDROID_VR",
+    body: {
+      context: {
+        client: {
+          clientName: "ANDROID_VR",
+          clientVersion: "1.57.29",
+          androidSdkVersion: 30,
+          hl: "he",
+        },
+      },
+    },
+    apiKey: "AIzaSyA8eiZmM1FaDVjRy-df2KTyQ_vz_yYM39w",
+    ua: "com.google.android.apps.youtube.vr.oculus/1.57.29 (Linux; U; Android 12L; eureka-user Build/SQ3A.220605.009.A1)",
+  },
+];
+
+interface TranscriptSegment {
+  text: string;
+  offset: number;
+}
+
+async function fetchYouTubeTranscript(videoId: string): Promise<TranscriptSegment[]> {
+  for (const client of YT_CLIENTS) {
+    try {
+      const playerRes = await fetch(
+        `https://www.youtube.com/youtubei/v1/player?key=${client.apiKey}&prettyPrint=false`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "User-Agent": client.ua,
+          },
+          body: JSON.stringify({ ...client.body, videoId }),
+        }
+      );
+      const playerData = await playerRes.json();
+
+      if (playerData.error || playerData.playabilityStatus?.status !== "OK") {
+        continue;
+      }
+
+      const tracks =
+        playerData.captions?.playerCaptionsTracklistRenderer?.captionTracks;
+      if (!tracks || tracks.length === 0) continue;
+
+      // Pick Hebrew first, then auto-generated Hebrew, then first available
+      let track =
+        tracks.find(
+          (t: { languageCode: string; kind?: string }) =>
+            (t.languageCode === "he" || t.languageCode === "iw") &&
+            t.kind !== "asr"
+        ) ||
+        tracks.find(
+          (t: { languageCode: string }) =>
+            t.languageCode === "he" || t.languageCode === "iw"
+        ) ||
+        tracks[0];
+
+      // Fetch caption content as json3
+      const captionRes = await fetch(track.baseUrl + "&fmt=json3");
+      const captionText = await captionRes.text();
+      if (!captionText || captionText.length === 0) continue;
+
+      const data = JSON.parse(captionText);
+      const events = (data.events || []).filter(
+        (e: { segs?: unknown[] }) => e.segs
+      );
+
+      const segments: TranscriptSegment[] = events
+        .map((e: { tStartMs?: number; segs?: { utf8?: string }[] }) => ({
+          text: (e.segs || [])
+            .map((s) => s.utf8 || "")
+            .join("")
+            .trim(),
+          offset: (e.tStartMs || 0) / 1000,
+        }))
+        .filter((s: TranscriptSegment) => s.text.length > 0);
+
+      if (segments.length > 0) return segments;
+    } catch {
+      continue;
+    }
+  }
+  return [];
+}
+
 export async function POST(req: Request) {
   try {
     const { videoId, title } = await req.json();
@@ -41,18 +145,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "videoId is required" }, { status: 400 });
     }
 
-    // 1. Fetch transcript from YouTube
-    const { YoutubeTranscript } = await import("youtube-transcript");
-    let segments;
-    try {
-      segments = await YoutubeTranscript.fetchTranscript(videoId, { lang: "he" });
-    } catch {
-      try {
-        segments = await YoutubeTranscript.fetchTranscript(videoId);
-      } catch {
-        return NextResponse.json({ error: "לא נמצא תמלול לסרטון זה" }, { status: 404 });
-      }
-    }
+    // 1. Fetch transcript from YouTube via innertube API
+    const segments = await fetchYouTubeTranscript(videoId);
 
     if (!segments || segments.length === 0) {
       return NextResponse.json({ error: "לא נמצא תמלול לסרטון זה" }, { status: 404 });
