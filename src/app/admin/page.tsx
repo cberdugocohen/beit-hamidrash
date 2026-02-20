@@ -50,16 +50,28 @@ export default function AdminPage() {
 
   const loadUsers = useCallback(async () => {
     setLoading(true);
-    const { data } = await supabase
-      .from("profiles")
-      .select("*")
-      .order("created_at", { ascending: false });
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) { setLoading(false); return; }
 
-    if (data) {
-      setUsers(data as UserRow[]);
+      const res = await fetch("/api/admin/users", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const json = await res.json();
+      if (json.users) {
+        setUsers(json.users as UserRow[]);
+        if (json.backfilled > 0) {
+          toast(`${json.backfilled} פרופילים חסרים נוצרו אוטומטית`);
+        }
+      } else if (json.error) {
+        toast("שגיאה בטעינת משתמשים: " + json.error);
+      }
+    } catch {
+      toast("שגיאה בטעינת משתמשים");
     }
     setLoading(false);
-  }, [supabase]);
+  }, [toast]);
 
   useEffect(() => {
     if (isAdmin) loadUsers();
@@ -67,7 +79,7 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (!isLoaded()) {
-      fetch("/videos.json")
+      fetch("/api/videos")
         .then((r) => r.json())
         .then((data: Video[]) => {
           setVideos(data);
@@ -90,8 +102,7 @@ export default function AdminPage() {
         setSyncResult({ newCount: data.newCount, newVideos: data.newVideos });
         if (data.newCount > 0) {
           toast(`נמצאו ${data.newCount} סרטונים חדשים!`);
-          // Reload videos
-          const res2 = await fetch("/videos.json");
+          const res2 = await fetch("/api/videos?t=" + Date.now());
           const fresh = await res2.json();
           setVideos(fresh);
           setLocalVideos(fresh);
@@ -103,6 +114,26 @@ export default function AdminPage() {
       toast("שגיאה בסנכרון");
     }
     setSyncing(false);
+  };
+
+  const handleSetup = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) { toast("לא מחובר"); return; }
+      const res = await fetch("/api/admin/setup", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const json = await res.json();
+      if (json.ok) {
+        toast("הגדרות המערכת עודכנו בהצלחה");
+      } else {
+        toast("שגיאה: " + (json.error || "Unknown"));
+      }
+    } catch {
+      toast("שגיאה בהגדרת המערכת");
+    }
   };
 
   const toggleAdmin = async (targetId: string, currentlyAdmin: boolean) => {
@@ -261,14 +292,23 @@ export default function AdminPage() {
                   <h2 className="font-bold text-slate-800 text-sm">סנכרון סרטונים</h2>
                   <p className="text-xs text-slate-400 mt-0.5">בדוק אם יש סרטונים חדשים ביוטיוב</p>
                 </div>
-                <button
-                  onClick={handleSync}
-                  disabled={syncing}
-                  className="flex items-center gap-2 bg-torah-600 text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-torah-700 transition-colors disabled:opacity-50"
-                >
-                  <RefreshCw className={`w-4 h-4 ${syncing ? "animate-spin" : ""}`} />
-                  {syncing ? "מסנכרן..." : "סנכרן עכשיו"}
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleSetup}
+                    className="flex items-center gap-2 bg-slate-100 text-slate-600 px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-slate-200 transition-colors"
+                    title="אתחול הגדרות מערכת"
+                  >
+                    ⚙ הגדרות
+                  </button>
+                  <button
+                    onClick={handleSync}
+                    disabled={syncing}
+                    className="flex items-center gap-2 bg-torah-600 text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-torah-700 transition-colors disabled:opacity-50"
+                  >
+                    <RefreshCw className={`w-4 h-4 ${syncing ? "animate-spin" : ""}`} />
+                    {syncing ? "מסנכרן..." : "סנכרן עכשיו"}
+                  </button>
+                </div>
               </div>
               {syncResult && (
                 <div className="mt-4 border-t border-slate-100 pt-4">

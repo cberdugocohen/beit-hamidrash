@@ -116,7 +116,7 @@ export default function HomePage() {
     async function init() {
       if (!isLoaded()) {
         try {
-          const r = await fetch("/videos.json");
+          const r = await fetch("/api/videos");
           const data: Video[] = await r.json();
           setVideos(data);
           setDataVersion((v) => v + 1);
@@ -132,7 +132,7 @@ export default function HomePage() {
           if (result.error) {
             setSyncStatus("error");
           } else if (result.newCount > 0) {
-            const jsonRes = await fetch("/videos.json?t=" + Date.now());
+            const jsonRes = await fetch("/api/videos?t=" + Date.now());
             const videos = await jsonRes.json();
             setVideos(videos);
             setDataVersion((v) => v + 1);

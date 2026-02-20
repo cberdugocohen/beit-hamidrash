@@ -1,12 +1,29 @@
 import { NextResponse } from "next/server";
 import { classifyTopic } from "@/lib/classify";
 import { toHebrewDate } from "@/lib/hebrew-date";
+import { createClient } from "@supabase/supabase-js";
 import fs from "fs";
 import path from "path";
 
 const API_KEY = process.env.YOUTUBE_API_KEY || "";
 const CHANNEL_ID = "UC3vMI0lHQ9UYA3563_AoG7g";
 const VIDEOS_PATH = path.join(process.cwd(), "public", "videos.json");
+const BUCKET = "data";
+
+function getAdminSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
+
+async function ensureBucket() {
+  const supabase = getAdminSupabase();
+  const { data: buckets } = await supabase.storage.listBuckets();
+  if (!buckets?.find((b) => b.name === BUCKET)) {
+    await supabase.storage.createBucket(BUCKET, { public: true });
+  }
+}
 
 interface VideoData {
   id: string;
@@ -69,7 +86,20 @@ async function fetchAllVideos(playlistId: string): Promise<VideoData[]> {
   return videos;
 }
 
-function loadExistingVideos(): VideoData[] {
+async function loadExistingVideos(): Promise<VideoData[]> {
+  // Try Supabase Storage first
+  try {
+    const supabase = getAdminSupabase();
+    const { data } = await supabase.storage.from(BUCKET).download("videos.json");
+    if (data) {
+      const text = await data.text();
+      const parsed = JSON.parse(text);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch {
+    // Fall through to filesystem
+  }
+  // Fallback: read from static file (deployed with the app)
   try {
     const raw = fs.readFileSync(VIDEOS_PATH, "utf-8");
     return JSON.parse(raw);
@@ -78,14 +108,27 @@ function loadExistingVideos(): VideoData[] {
   }
 }
 
-function saveVideos(videos: VideoData[]) {
-  fs.writeFileSync(VIDEOS_PATH, JSON.stringify(videos, null, 0), "utf-8");
+async function saveVideos(videos: VideoData[]) {
+  await ensureBucket();
+  const supabase = getAdminSupabase();
+  const json = JSON.stringify(videos, null, 0);
+  const blob = new Blob([json], { type: "application/json" });
+  await supabase.storage.from(BUCKET).upload("videos.json", blob, {
+    contentType: "application/json",
+    upsert: true,
+  });
+  // Also try to write locally (works in dev, fails silently on Vercel)
+  try {
+    fs.writeFileSync(VIDEOS_PATH, json, "utf-8");
+  } catch {
+    // Expected on Vercel — ignore
+  }
 }
 
 // GET: Check for new videos only (quick - uses search API for recent uploads)
 export async function GET() {
   try {
-    const existing = loadExistingVideos();
+    const existing = await loadExistingVideos();
     const existingIds = new Set(existing.map((v) => v.id));
 
     // Fetch recent videos (last 50) to check for new ones
@@ -123,7 +166,7 @@ export async function GET() {
     if (newVideos.length > 0) {
       // Add new videos and sort by date
       const all = [...existing, ...newVideos].sort((a, b) => a.date.localeCompare(b.date));
-      saveVideos(all);
+      await saveVideos(all);
     }
 
     return NextResponse.json({
@@ -146,7 +189,7 @@ export async function POST() {
     // Sort by date (oldest first)
     videos.sort((a, b) => a.date.localeCompare(b.date));
 
-    saveVideos(videos);
+    await saveVideos(videos);
 
     // Count topics
     const topicCounts: Record<string, number> = {};
