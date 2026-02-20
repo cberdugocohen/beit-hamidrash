@@ -33,6 +33,9 @@ interface VideoPlayerProps {
   onEditQuiz: (v: string) => void;
   onEditPresentation: (v: string) => void;
   onSaveMeta: () => void;
+  onAutoTranscript?: () => void;
+  onAutoPresentation?: () => void;
+  autoTranscriptLoading?: boolean;
   onComplete: (id: string) => void;
   onSelect: (v: Video) => void;
   onClose: () => void;
@@ -43,7 +46,8 @@ function VideoPlayer({
   video, isCompleted, prevVideo, nextVideo, lessonNum, lessonTotal,
   currentMeta, isAdmin, editSummary, editTranscript, editQuiz, editPresentation,
   onEditSummary, onEditTranscript, onEditQuiz, onEditPresentation,
-  onSaveMeta, onComplete, onSelect, onClose, getTopicDot,
+  onSaveMeta, onAutoTranscript, onAutoPresentation, autoTranscriptLoading,
+  onComplete, onSelect, onClose, getTopicDot,
 }: VideoPlayerProps) {
   const hasAnyResource = currentMeta && (currentMeta.summary || currentMeta.transcriptUrl || currentMeta.quizUrl || currentMeta.presentationUrl);
 
@@ -196,9 +200,32 @@ function VideoPlayer({
                   <span className="text-sm font-bold">עריכת אדמין</span>
                 </div>
                 <AdminField label="סיכום השיעור" value={editSummary} onChange={onEditSummary} multiline dir="rtl" placeholder="כתוב סיכום לשיעור..." />
-                <AdminField label="קישור לתמלול" value={editTranscript} onChange={onEditTranscript} dir="ltr" placeholder="https://..." />
+                <div>
+                  <AdminField label="קישור לתמלול" value={editTranscript} onChange={onEditTranscript} dir="ltr" placeholder="https://..." />
+                  {onAutoTranscript && (
+                    <button
+                      onClick={onAutoTranscript}
+                      disabled={autoTranscriptLoading}
+                      className="mt-1 flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-700 font-medium disabled:opacity-50"
+                    >
+                      <Download className="w-3 h-3" />
+                      {autoTranscriptLoading ? "מוריד תמלול..." : "הורד תמלול אוטומטי מיוטיוב"}
+                    </button>
+                  )}
+                </div>
                 <AdminField label="קישור למבחן" value={editQuiz} onChange={onEditQuiz} dir="ltr" placeholder="https://..." />
-                <AdminField label="קישור למצגת" value={editPresentation} onChange={onEditPresentation} dir="ltr" placeholder="https://..." />
+                <div>
+                  <AdminField label="קישור למצגת" value={editPresentation} onChange={onEditPresentation} dir="ltr" placeholder="https://docs.google.com/presentation/d/.../edit" />
+                  {onAutoPresentation && editPresentation && (
+                    <button
+                      onClick={onAutoPresentation}
+                      className="mt-1 flex items-center gap-1.5 text-xs text-green-600 hover:text-green-700 font-medium"
+                    >
+                      <Presentation className="w-3 h-3" />
+                      המר לקישור צפייה ציבורי
+                    </button>
+                  )}
+                </div>
                 <button onClick={onSaveMeta} className="flex items-center gap-2 bg-torah-600 hover:bg-torah-700 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors w-full justify-center">
                   <Save className="w-4 h-4" /> שמור
                 </button>
@@ -239,7 +266,7 @@ function AdminField({ label, value, onChange, multiline, dir, placeholder }: {
     <div>
       <label className="text-xs font-medium text-slate-500 mb-1 block">{label}</label>
       {multiline ? (
-        <textarea value={value} onChange={(e) => onChange(e.target.value)} rows={3} className={`${cls} resize-none`} dir={dir} placeholder={placeholder} />
+        <textarea value={value} onChange={(e) => onChange(e.target.value)} rows={8} className={`${cls} resize-y min-h-[120px]`} dir={dir} placeholder={placeholder} />
       ) : (
         <input type="url" value={value} onChange={(e) => onChange(e.target.value)} className={cls} dir={dir} placeholder={placeholder} />
       )}

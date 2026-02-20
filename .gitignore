@@ -40,3 +40,5 @@ playwright-report/
 
 # vercel
 .vercel/
+
+.vercel

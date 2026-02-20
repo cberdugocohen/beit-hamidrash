@@ -6,6 +6,29 @@ import { createClient } from "./client";
 import { useTopicSettingsStore } from "@/store/topicSettings";
 
 const supabase = createClient();
+const BUCKET = "data";
+const FILE = "topic-settings.json";
+
+type SettingsMap = Record<string, { image_url?: string }>;
+
+async function loadSettingsFile(): Promise<SettingsMap> {
+  try {
+    const { data } = await supabase.storage.from(BUCKET).download(FILE);
+    if (data) {
+      const text = await data.text();
+      return JSON.parse(text);
+    }
+  } catch { /* file may not exist yet */ }
+  return {};
+}
+
+async function writeSettingsFile(settings: SettingsMap) {
+  const blob = new Blob([JSON.stringify(settings, null, 2)], { type: "application/json" });
+  await supabase.storage.from(BUCKET).upload(FILE, blob, {
+    contentType: "application/json",
+    upsert: true,
+  });
+}
 
 export function useTopicSettingsSync() {
   const { user, profile } = useAuth();
@@ -13,16 +36,11 @@ export function useTopicSettingsSync() {
   const loadedRef = useRef(false);
   const isAdmin = profile?.is_admin ?? false;
 
-  const loadFromDB = useCallback(async () => {
-    const { data } = await supabase
-      .from("topic_settings")
-      .select("*");
-
-    if (data && data.length > 0) {
-      for (const row of data) {
-        if (row.image_url) {
-          store.setTopicImage(row.topic, row.image_url);
-        }
+  const loadFromStorage = useCallback(async () => {
+    const settings = await loadSettingsFile();
+    for (const [topic, val] of Object.entries(settings)) {
+      if (val.image_url) {
+        store.setTopicImage(topic, val.image_url);
       }
     }
   }, [store]);
@@ -30,30 +48,22 @@ export function useTopicSettingsSync() {
   useEffect(() => {
     if (!loadedRef.current) {
       loadedRef.current = true;
-      loadFromDB();
+      loadFromStorage();
     }
-  }, [loadFromDB]);
+  }, [loadFromStorage]);
 
   const saveTopicImage = useCallback(async (topic: string, imageUrl: string) => {
     if (!user || !isAdmin) return;
-
-    await supabase
-      .from("topic_settings")
-      .upsert({
-        topic,
-        image_url: imageUrl || null,
-        updated_by: user.id,
-        updated_at: new Date().toISOString(),
-      }, { onConflict: "topic" });
+    const settings = await loadSettingsFile();
+    settings[topic] = { image_url: imageUrl || undefined };
+    await writeSettingsFile(settings);
   }, [user, isAdmin]);
 
   const removeTopicImage = useCallback(async (topic: string) => {
     if (!user || !isAdmin) return;
-
-    await supabase
-      .from("topic_settings")
-      .delete()
-      .eq("topic", topic);
+    const settings = await loadSettingsFile();
+    delete settings[topic];
+    await writeSettingsFile(settings);
   }, [user, isAdmin]);
 
   return { saveTopicImage, removeTopicImage, isAdmin };

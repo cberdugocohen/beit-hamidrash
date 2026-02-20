@@ -110,6 +110,7 @@ export default function HomePage() {
   const [editTranscript, setEditTranscript] = useState("");
   const [editQuiz, setEditQuiz] = useState("");
   const [editPresentation, setEditPresentation] = useState("");
+  const [autoTranscriptLoading, setAutoTranscriptLoading] = useState(false);
 
   // ── Load videos + auto-sync ──
   useEffect(() => {
@@ -245,6 +246,53 @@ export default function HomePage() {
     // Also persist to Supabase
     saveMetaToDB(selectedVideo.id);
     toast("חומרי השיעור נשמרו בהצלחה");
+  };
+
+  const handleAutoTranscript = async () => {
+    if (!selectedVideo) return;
+    setAutoTranscriptLoading(true);
+    try {
+      const res = await fetch(`/api/transcript?videoId=${selectedVideo.videoId}`);
+      const data = await res.json();
+      if (data.error) {
+        toast(data.error);
+      } else if (data.transcript) {
+        setEditSummary(data.transcript);
+        toast(`תמלול הורד בהצלחה (${data.segments} קטעים) — הודבק בשדה הסיכום. ערכי ושמרי.`);
+      }
+    } catch {
+      toast("שגיאה בהורדת תמלול");
+    }
+    setAutoTranscriptLoading(false);
+  };
+
+  const handleAutoPresentation = () => {
+    if (!editPresentation) return;
+    // Convert Google Slides/Drive edit URL to public view URL
+    let url = editPresentation.trim();
+    // Google Slides: .../edit -> .../pub
+    if (url.includes("docs.google.com/presentation")) {
+      url = url.replace(/\/(edit|present)(\?.*)?$/, "/pub?start=false&loop=false&delayms=3000");
+      if (!url.includes("/pub")) {
+        url = url.replace(/\/?$/, "/pub?start=false&loop=false&delayms=3000");
+      }
+    }
+    // Google Drive file: convert to direct view
+    if (url.includes("drive.google.com/file/d/")) {
+      const match = url.match(/\/file\/d\/([^/]+)/);
+      if (match) {
+        url = `https://drive.google.com/file/d/${match[1]}/view?usp=sharing`;
+      }
+    }
+    // Google Drive open: convert to view
+    if (url.includes("drive.google.com/open?id=")) {
+      const match = url.match(/id=([^&]+)/);
+      if (match) {
+        url = `https://drive.google.com/file/d/${match[1]}/view?usp=sharing`;
+      }
+    }
+    setEditPresentation(url);
+    toast("הקישור הומר לקישור צפייה ציבורי — לחצי שמור");
   };
 
   const toggleGroup = (key: string) => {
@@ -458,6 +506,9 @@ export default function HomePage() {
               onEditQuiz={setEditQuiz}
               onEditPresentation={setEditPresentation}
               onSaveMeta={handleSaveMeta}
+              onAutoTranscript={handleAutoTranscript}
+              onAutoPresentation={handleAutoPresentation}
+              autoTranscriptLoading={autoTranscriptLoading}
               onComplete={handleComplete}
               onSelect={handleSelectVideo}
               onClose={() => setShowDetail(false)}
