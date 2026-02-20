@@ -175,10 +175,77 @@ export async function POST(req: Request) {
     const { data: urlData } = supabase.storage.from(BUCKET).getPublicUrl(filename);
     const publicUrl = urlData.publicUrl;
 
+    // 6. Upload to Google Drive (if configured)
+    let driveUrl = "";
+    const driveEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
+    const driveKey = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
+    const driveFolderId = process.env.GOOGLE_DRIVE_FOLDER_ID;
+
+    if (driveEmail && driveKey && driveFolderId) {
+      try {
+        const { google } = await import("googleapis");
+        const auth = new google.auth.JWT({
+          email: driveEmail,
+          key: driveKey.replace(/\\n/g, "\n"),
+          scopes: ["https://www.googleapis.com/auth/drive.file"],
+        });
+        const drive = google.drive({ version: "v3", auth });
+
+        const pdfName = `${title || videoId} - תמלול.pdf`;
+
+        // Check if file already exists in folder
+        const existing = await drive.files.list({
+          q: `name='${pdfName.replace(/'/g, "\\'")}' and '${driveFolderId}' in parents and trashed=false`,
+          fields: "files(id)",
+        });
+
+        const stream = await import("stream");
+        const readable = new stream.Readable();
+        readable.push(pdfBuffer);
+        readable.push(null);
+
+        if (existing.data.files && existing.data.files.length > 0) {
+          // Update existing file
+          const fileId = existing.data.files[0].id!;
+          await drive.files.update({
+            fileId,
+            media: { mimeType: "application/pdf", body: readable },
+          });
+          driveUrl = `https://drive.google.com/file/d/${fileId}/view`;
+        } else {
+          // Create new file
+          const created = await drive.files.create({
+            requestBody: {
+              name: pdfName,
+              parents: [driveFolderId],
+            },
+            media: { mimeType: "application/pdf", body: readable },
+            fields: "id",
+          });
+          const fileId = created.data.id!;
+
+          // Make viewable by anyone with link
+          await drive.permissions.create({
+            fileId,
+            requestBody: { role: "reader", type: "anyone" },
+          });
+
+          driveUrl = `https://drive.google.com/file/d/${fileId}/view`;
+        }
+      } catch (driveErr) {
+        console.error("Google Drive upload error:", driveErr);
+        // Non-fatal — Supabase URL still works
+      }
+    }
+
     return NextResponse.json({
-      url: publicUrl,
+      url: driveUrl || publicUrl,
+      supabaseUrl: publicUrl,
+      driveUrl: driveUrl || null,
       segments: segments.length,
-      message: `תמלול PDF נוצר בהצלחה (${segments.length} קטעים)`,
+      message: driveUrl
+        ? `תמלול PDF נוצר והועלה ל-Google Drive (${segments.length} קטעים)`
+        : `תמלול PDF נוצר בהצלחה (${segments.length} קטעים)`,
     });
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "Unknown error";
