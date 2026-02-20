@@ -252,13 +252,18 @@ export default function HomePage() {
     if (!selectedVideo) return;
     setAutoTranscriptLoading(true);
     try {
-      const res = await fetch(`/api/transcript?videoId=${selectedVideo.videoId}`);
+      // Generate PDF transcript and upload to Supabase Storage
+      const res = await fetch("/api/transcript-pdf", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ videoId: selectedVideo.videoId, title: selectedVideo.title }),
+      });
       const data = await res.json();
       if (data.error) {
         toast(data.error);
-      } else if (data.transcript) {
-        setEditSummary(data.transcript);
-        toast(`תמלול הורד בהצלחה (${data.segments} קטעים) — הודבק בשדה הסיכום. ערכי ושמרי.`);
+      } else if (data.url) {
+        setEditTranscript(data.url);
+        toast(`תמלול PDF נוצר בהצלחה (${data.segments} קטעים) — לחצי שמור`);
       }
     } catch {
       toast("שגיאה בהורדת תמלול");
