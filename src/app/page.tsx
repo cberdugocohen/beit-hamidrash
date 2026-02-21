@@ -29,6 +29,8 @@ import {
   PlayCircle,
   Zap,
   Library,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { useState, useMemo, useEffect, useRef } from "react";
 
@@ -94,6 +96,7 @@ export default function HomePage() {
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
   const [showAllTopics, setShowAllTopics] = useState(false);
+  const [hideCompleted, setHideCompleted] = useState(false);
   const [syncStatus, setSyncStatus] = useState<"idle" | "syncing" | "done" | "error">("idle");
   const [syncMsg, setSyncMsg] = useState("");
   const [dataVersion, setDataVersion] = useState(0);
@@ -178,6 +181,22 @@ export default function HomePage() {
     }
     return count;
   }, [store.lessonProgress, todayStr]);
+
+  // Daily challenge: deterministic "lesson of the day" based on date
+  const dailyChallenge = useMemo(() => {
+    if (allVideos.length === 0) return null;
+    // Simple hash from date string to pick a video index
+    const dateStr = todayStr;
+    let hash = 0;
+    for (let i = 0; i < dateStr.length; i++) {
+      hash = ((hash << 5) - hash + dateStr.charCodeAt(i)) | 0;
+    }
+    const idx = Math.abs(hash) % allVideos.length;
+    const video = allVideos[idx];
+    // Skip if already completed today
+    if (store.isLessonCompleted(video.id)) return null;
+    return video;
+  }, [allVideos, todayStr, store]);
 
   // "Continue where you left off"
   const continueVideo = useMemo(() => {
@@ -333,6 +352,16 @@ export default function HomePage() {
       keys = [...hebMonths].reverse();
       grouped = videosByHebMonth;
     }
+    // Filter completed lessons
+    if (hideCompleted) {
+      const filtered = new Map<string, Video[]>();
+      for (const [key, vids] of grouped) {
+        const remaining = vids.filter((v) => !store.isLessonCompleted(v.id));
+        if (remaining.length > 0) filtered.set(key, remaining);
+      }
+      keys = keys.filter((k) => filtered.has(k));
+      grouped = filtered;
+    }
     if (search) {
       const filtered = new Map<string, Video[]>();
       for (const [key, vids] of grouped) {
@@ -364,7 +393,7 @@ export default function HomePage() {
       }
     }
     return { groupKeys: keys, groupedVideos: grouped, hiddenCount: hidden };
-  }, [groupMode, search, activeFilter, topics, hebMonths, videosByTopic, videosByHebMonth, showAllTopics, smartTopics]);
+  }, [groupMode, search, activeFilter, topics, hebMonths, videosByTopic, videosByHebMonth, showAllTopics, smartTopics, hideCompleted, store]);
 
   const totalFiltered = useMemo(() => {
     let c = 0;
@@ -439,6 +468,31 @@ export default function HomePage() {
           syncStatus={syncStatus}
           syncMsg={syncMsg}
         />
+
+        {/* ── Daily Challenge ── */}
+        {dailyChallenge && !selectedVideo && (
+          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-4">
+            <button
+              onClick={() => handleSelectVideo(dailyChallenge)}
+              className="w-full bg-gradient-to-l from-gold-50 to-amber-50 rounded-2xl border border-gold-200 p-4 text-right hover:shadow-lg hover:border-gold-300 transition-all group"
+            >
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-gold-100 flex items-center justify-center group-hover:bg-gold-200 transition-colors">
+                  <Zap className="w-6 h-6 text-gold-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-[11px] text-gold-500 mb-0.5 font-bold">⭐ אתגר יומי — השיעור של היום</div>
+                  <div className="text-sm font-bold text-slate-800 truncate">{dailyChallenge.title}</div>
+                  <div className="text-[11px] text-slate-400 mt-0.5 flex items-center gap-1.5">
+                    <span className={`w-2 h-2 rounded-full ${getTopicDot(dailyChallenge.topic)}`} />
+                    {dailyChallenge.topic} • {dailyChallenge.hebDate}
+                  </div>
+                </div>
+                <Play className="w-5 h-5 text-gold-400 shrink-0 group-hover:text-gold-600 transition-colors" />
+              </div>
+            </button>
+          </motion.div>
+        )}
 
         {/* ── Continue Where You Left Off ── */}
         {continueVideo && !selectedVideo && (
@@ -524,6 +578,15 @@ export default function HomePage() {
               </button>
             </div>
             <div className="flex items-center gap-2 text-xs">
+              {completedCount > 0 && (
+                <button
+                  onClick={() => setHideCompleted(!hideCompleted)}
+                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg font-medium transition-all ${hideCompleted ? "bg-emerald-100 text-emerald-700" : "text-slate-400 hover:text-slate-600"}`}
+                >
+                  {hideCompleted ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                  {hideCompleted ? "הסתר הושלמו" : "הסתר הושלמו"}
+                </button>
+              )}
               <span className="text-slate-400 font-medium">
                 {totalFiltered} שיעורים{hiddenCount > 0 && ` (מתוך ${totalVideos})`}
               </span>
