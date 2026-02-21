@@ -86,13 +86,11 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
       type: "article",
       locale: "he_IL",
       siteName: "בית המדרש קשר השותפות",
-      images: [{ url: "/og-image.png", width: 1200, height: 630, alt: video.title }],
     },
     twitter: {
       card: "summary_large_image",
       title: video.title,
       description,
-      images: ["/og-image.png"],
     },
   };
 }

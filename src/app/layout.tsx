@@ -12,13 +12,11 @@ export const metadata: Metadata = {
     locale: "he_IL",
     type: "website",
     siteName: "בית המדרש קשר השותפות",
-    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "בית המדרש קשר השותפות" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "בית המדרש - קשר השותפות",
     description: "שיעורי תורה, דרש, זוהר וחסידות מפי הרב אסף פלג",
-    images: ["/og-image.png"],
   },
   manifest: "/manifest.json",
 };

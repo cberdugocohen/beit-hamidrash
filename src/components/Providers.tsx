@@ -5,6 +5,7 @@ import { useSupabaseSync } from "@/lib/supabase/use-sync";
 import { ToastProvider } from "@/components/Toast";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import DarkModeSync from "@/components/DarkModeSync";
+import InstallPrompt from "@/components/InstallPrompt";
 import { ReactNode } from "react";
 
 function SyncManager({ children }: { children: ReactNode }) {
@@ -18,6 +19,7 @@ export default function Providers({ children }: { children: ReactNode }) {
       <AuthProvider>
         <ToastProvider>
           <DarkModeSync />
+          <InstallPrompt />
           <SyncManager>{children}</SyncManager>
         </ToastProvider>
       </AuthProvider>
