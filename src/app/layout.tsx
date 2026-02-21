@@ -30,7 +30,7 @@ export default function RootLayout({
     <html lang="he" dir="rtl">
       <head>
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-        <link rel="apple-touch-icon" href="/icon-192.svg" />
+        <link rel="apple-touch-icon" href="/logo.png" />
         <meta name="theme-color" content="#1e3a5f" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />

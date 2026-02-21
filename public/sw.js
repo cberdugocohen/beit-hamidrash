@@ -1,9 +1,9 @@
-const CACHE_NAME = "beit-hamidrash-v1";
+const CACHE_NAME = "beit-hamidrash-v2";
 const STATIC_ASSETS = [
   "/",
   "/favicon.svg",
+  "/logo.png",
   "/icon-192.svg",
-  "/icon-512.svg",
   "/manifest.json",
 ];
 
