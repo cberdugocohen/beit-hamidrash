@@ -66,11 +66,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    // Safety timeout: never stay loading for more than 5 seconds
+    const timeout = setTimeout(() => setLoading(false), 5000);
+
     // Get initial session
     supabase.auth.getSession().then(async ({ data: { session: s } }) => {
       setSession(s);
       setUser(s?.user ?? null);
-      if (s?.user) await fetchProfile(s.user.id);
+      try {
+        if (s?.user) await fetchProfile(s.user.id);
+      } catch { /* profile fetch failed, continue */ }
+      clearTimeout(timeout);
+      setLoading(false);
+    }).catch(() => {
+      clearTimeout(timeout);
       setLoading(false);
     });
 
