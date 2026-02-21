@@ -53,8 +53,7 @@ export function useLessonMetaSync() {
     }
   }, [loadAllMeta]);
 
-  // ── Save meta to DB (admin only) ──
-  // Returns { ok: true } on success, { ok: false, error: string } on failure
+  // ── Save meta to DB via API (admin only, uses service role to bypass RLS) ──
   const saveMetaToDB = useCallback(async (videoId: string): Promise<{ ok: boolean; error?: string }> => {
     if (!user || !isAdmin) return { ok: false, error: "אין הרשאת אדמין" };
 
@@ -62,23 +61,28 @@ export function useLessonMetaSync() {
     if (!meta) return { ok: false, error: "אין נתונים לשמור" };
 
     try {
-      const { error } = await supabase
-        .from("lesson_meta")
-        .upsert({
-          video_id: videoId,
-          summary: meta.summary || null,
-          transcript_url: meta.transcriptUrl || null,
-          quiz_url: meta.quizUrl || null,
-          presentation_url: meta.presentationUrl || null,
-          updated_by: user.id,
-          updated_at: new Date().toISOString(),
-        }, { onConflict: "video_id" });
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) return { ok: false, error: "לא מחובר" };
 
-      if (error) {
-        console.error("lesson_meta save failed:", error.message);
-        return { ok: false, error: error.message };
-      }
-      return { ok: true };
+      const res = await fetch("/api/admin/lesson-meta", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          videoId,
+          summary: meta.summary || "",
+          transcriptUrl: meta.transcriptUrl || "",
+          quizUrl: meta.quizUrl || "",
+          presentationUrl: meta.presentationUrl || "",
+        }),
+      });
+
+      const json = await res.json();
+      if (json.ok) return { ok: true };
+      return { ok: false, error: json.error || "שגיאה לא ידועה" };
     } catch (e) {
       const msg = e instanceof Error ? e.message : "שגיאה לא ידועה";
       console.error("lesson_meta save error:", msg);
