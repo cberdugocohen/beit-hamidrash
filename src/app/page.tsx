@@ -174,6 +174,8 @@ export default function HomePage() {
   const videosByHebMonth = useMemo(() => getVideosByHebMonth(), [dataVersion]);
 
   const todayStr = new Date().toISOString().split("T")[0];
+  const sevenDaysAgo = useMemo(() => new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10), []);
+  const recentVideos = useMemo(() => allVideos.filter((v) => v.date > sevenDaysAgo).sort((a, b) => b.date.localeCompare(a.date)), [allVideos, sevenDaysAgo]);
   const todayCompleted = useMemo(() => {
     let count = 0;
     for (const p of Object.values(store.lessonProgress)) {
@@ -452,6 +454,33 @@ export default function HomePage() {
           syncStatus={syncStatus}
           syncMsg={syncMsg}
         />
+
+        {/* ── New Lessons ── */}
+        {recentVideos.length > 0 && !selectedVideo && (
+          <div className="mb-6">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-[10px] font-bold bg-emerald-100 text-emerald-600 px-2 py-0.5 rounded-full">חדש</span>
+              <h2 className="text-sm font-bold text-slate-700">שיעורים חדשים השבוע</h2>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {recentVideos.slice(0, 6).map((v) => (
+                <button
+                  key={v.id}
+                  onClick={() => handleSelectVideo(v)}
+                  className="bg-white rounded-xl border border-emerald-100 p-3 text-right hover:shadow-md hover:border-emerald-200 transition-all group"
+                >
+                  <div className="text-sm font-semibold text-slate-800 truncate group-hover:text-torah-700 transition-colors">{v.title}</div>
+                  <div className="text-[11px] text-slate-400 mt-1 flex items-center gap-1.5">
+                    <span className={`w-2 h-2 rounded-full ${getTopicDot(v.topic)}`} />
+                    <span className="truncate">{v.topic}</span>
+                    <span className="text-slate-300">•</span>
+                    <span>{v.hebDate}</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* ── Continue Where You Left Off ── */}
         {continueVideo && !selectedVideo && (
