@@ -33,9 +33,7 @@ interface VideoPlayerProps {
   onEditQuiz: (v: string) => void;
   onEditPresentation: (v: string) => void;
   onSaveMeta: () => void;
-  onAutoTranscript?: () => void;
   onAutoPresentation?: () => void;
-  autoTranscriptLoading?: boolean;
   onComplete: (id: string) => void;
   onSelect: (v: Video) => void;
   onClose: () => void;
@@ -46,7 +44,7 @@ function VideoPlayer({
   video, isCompleted, prevVideo, nextVideo, lessonNum, lessonTotal,
   currentMeta, isAdmin, editSummary, editTranscript, editQuiz, editPresentation,
   onEditSummary, onEditTranscript, onEditQuiz, onEditPresentation,
-  onSaveMeta, onAutoTranscript, onAutoPresentation, autoTranscriptLoading,
+  onSaveMeta, onAutoPresentation,
   onComplete, onSelect, onClose, getTopicDot,
 }: VideoPlayerProps) {
   const hasAnyResource = currentMeta && (currentMeta.summary || currentMeta.transcriptUrl || currentMeta.quizUrl || currentMeta.presentationUrl);
@@ -226,19 +224,7 @@ function VideoPlayer({
                   <span className="text-sm font-bold">עריכת אדמין</span>
                 </div>
                 <AdminField label="סיכום השיעור" value={editSummary} onChange={onEditSummary} multiline dir="rtl" placeholder="כתוב סיכום לשיעור..." />
-                <div>
-                  <AdminField label="קישור לתמלול" value={editTranscript} onChange={onEditTranscript} dir="ltr" placeholder="https://..." />
-                  {onAutoTranscript && (
-                    <button
-                      onClick={onAutoTranscript}
-                      disabled={autoTranscriptLoading}
-                      className="mt-1 flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-700 font-medium disabled:opacity-50"
-                    >
-                      <Download className="w-3 h-3" />
-                      {autoTranscriptLoading ? "מוריד תמלול..." : "הורד תמלול אוטומטי מיוטיוב"}
-                    </button>
-                  )}
-                </div>
+                <AdminField label="קישור לתמלול" value={editTranscript} onChange={onEditTranscript} dir="ltr" placeholder="https://..." />
                 <AdminField label="קישור למבחן" value={editQuiz} onChange={onEditQuiz} dir="ltr" placeholder="https://..." />
                 <div>
                   <AdminField label="קישור למצגת" value={editPresentation} onChange={onEditPresentation} dir="ltr" placeholder="https://docs.google.com/presentation/d/.../edit" />

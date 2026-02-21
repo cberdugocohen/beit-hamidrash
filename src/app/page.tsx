@@ -110,7 +110,6 @@ export default function HomePage() {
   const [editTranscript, setEditTranscript] = useState("");
   const [editQuiz, setEditQuiz] = useState("");
   const [editPresentation, setEditPresentation] = useState("");
-  const [autoTranscriptLoading, setAutoTranscriptLoading] = useState(false);
 
   // ── Load videos + auto-sync ──
   useEffect(() => {
@@ -147,18 +146,6 @@ export default function HomePage() {
         }
         setTimeout(() => { setSyncStatus("idle"); setSyncMsg(""); }, 5000);
 
-        // Auto-generate missing transcripts in background
-        (async () => {
-          try {
-            let remaining = 1;
-            while (remaining > 0) {
-              const r = await fetch("/api/auto-transcripts?limit=2");
-              const d = await r.json();
-              remaining = d.remaining || 0;
-              if (d.generated === 0 && d.remaining === 0) break;
-            }
-          } catch { /* background — silent */ }
-        })();
       }
     }
     init();
@@ -261,29 +248,6 @@ export default function HomePage() {
     toast("חומרי השיעור נשמרו בהצלחה");
   };
 
-  const handleAutoTranscript = async () => {
-    if (!selectedVideo) return;
-    setAutoTranscriptLoading(true);
-    try {
-      // Generate PDF transcript and upload to Supabase Storage
-      const res = await fetch("/api/transcript-pdf", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ videoId: selectedVideo.videoId, title: selectedVideo.title }),
-      });
-      const data = await res.json();
-      if (data.error) {
-        toast(data.error);
-        if (data.diagnostics) console.error("Transcript diagnostics:", data.diagnostics);
-      } else if (data.url) {
-        setEditTranscript(data.url);
-        toast(`תמלול PDF נוצר בהצלחה (${data.segments} קטעים) — לחצי שמור`);
-      }
-    } catch {
-      toast("שגיאה בהורדת תמלול");
-    }
-    setAutoTranscriptLoading(false);
-  };
 
   const handleAutoPresentation = () => {
     if (!editPresentation) return;
@@ -525,9 +489,7 @@ export default function HomePage() {
               onEditQuiz={setEditQuiz}
               onEditPresentation={setEditPresentation}
               onSaveMeta={handleSaveMeta}
-              onAutoTranscript={handleAutoTranscript}
               onAutoPresentation={handleAutoPresentation}
-              autoTranscriptLoading={autoTranscriptLoading}
               onComplete={handleComplete}
               onSelect={handleSelectVideo}
               onClose={() => setShowDetail(false)}
