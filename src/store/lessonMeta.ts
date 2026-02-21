@@ -41,6 +41,7 @@ export const useLessonMetaStore = create<LessonMetaState>()(
     }),
     {
       name: "lms-lesson-meta",
+      partialize: (state) => ({ meta: state.meta }),
     }
   )
 );
