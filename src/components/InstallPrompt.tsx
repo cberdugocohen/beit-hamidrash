@@ -16,7 +16,7 @@ export default function InstallPrompt() {
   const [showIOSGuide, setShowIOSGuide] = useState(false);
 
   useEffect(() => {
-    // Check if already installed
+    // Check if already installed as PWA
     if (window.matchMedia("(display-mode: standalone)").matches) return;
 
     // Check if user dismissed before
@@ -27,25 +27,30 @@ export default function InstallPrompt() {
       if (Date.now() - dismissedAt < 7 * 24 * 60 * 60 * 1000) return;
     }
 
-    // Detect iOS
+    // Detect mobile
     const ua = navigator.userAgent;
     const isiOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    const isMobile = isiOS || /Android|webOS|Opera Mini/i.test(ua);
     setIsIOS(isiOS);
 
-    if (isiOS) {
-      // On iOS, show banner after 3 seconds
-      const timer = setTimeout(() => setShowBanner(true), 3000);
-      return () => clearTimeout(timer);
-    }
-
-    // Android/Desktop: listen for beforeinstallprompt
+    // Listen for beforeinstallprompt (Android Chrome)
     const handler = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
-      setTimeout(() => setShowBanner(true), 2000);
+      setShowBanner(true);
     };
     window.addEventListener("beforeinstallprompt", handler);
-    return () => window.removeEventListener("beforeinstallprompt", handler);
+
+    // On mobile, show banner after 3 seconds regardless
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    if (isMobile) {
+      timer = setTimeout(() => setShowBanner(true), 3000);
+    }
+
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handler);
+      if (timer) clearTimeout(timer);
+    };
   }, []);
 
   const handleInstall = async () => {
@@ -56,7 +61,8 @@ export default function InstallPrompt() {
         setShowBanner(false);
       }
       setDeferredPrompt(null);
-    } else if (isIOS) {
+    } else {
+      // Show manual guide (iOS or Android without prompt)
       setShowIOSGuide(true);
     }
   };
@@ -111,25 +117,42 @@ export default function InstallPrompt() {
             ) : (
               <div className="p-4">
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-bold text-slate-800">הוספה למסך הבית (iOS)</h3>
+                  <h3 className="text-sm font-bold text-slate-800">הוספה למסך הבית</h3>
                   <button onClick={handleDismiss} className="text-slate-300 hover:text-slate-500 p-1">
                     <X className="w-4 h-4" />
                   </button>
                 </div>
-                <div className="space-y-3 text-sm text-slate-600">
-                  <div className="flex items-center gap-3 bg-slate-50 rounded-xl p-3">
-                    <span className="text-lg">1️⃣</span>
-                    <span>לחצי על <strong className="inline-flex items-center gap-1">כפתור השיתוף <svg className="inline w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13"/></svg></strong> בתחתית הדפדפן</span>
+                {isIOS ? (
+                  <div className="space-y-3 text-sm text-slate-600">
+                    <div className="flex items-center gap-3 bg-slate-50 rounded-xl p-3">
+                      <span className="text-lg">1️⃣</span>
+                      <span>לחצי על <strong className="inline-flex items-center gap-1">כפתור השיתוף <svg className="inline w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13"/></svg></strong> בתחתית הדפדפן</span>
+                    </div>
+                    <div className="flex items-center gap-3 bg-slate-50 rounded-xl p-3">
+                      <span className="text-lg">2️⃣</span>
+                      <span>גללי למטה ובחרי <strong>&quot;הוסף למסך הבית&quot;</strong></span>
+                    </div>
+                    <div className="flex items-center gap-3 bg-slate-50 rounded-xl p-3">
+                      <span className="text-lg">3️⃣</span>
+                      <span>לחצי <strong>&quot;הוסף&quot;</strong> — וזהו! 🎉</span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-3 bg-slate-50 rounded-xl p-3">
-                    <span className="text-lg">2️⃣</span>
-                    <span>גללי למטה ובחרי <strong>&quot;הוסף למסך הבית&quot;</strong></span>
+                ) : (
+                  <div className="space-y-3 text-sm text-slate-600">
+                    <div className="flex items-center gap-3 bg-slate-50 rounded-xl p-3">
+                      <span className="text-lg">1️⃣</span>
+                      <span>לחצי על <strong>שלוש הנקודות ⋮</strong> בפינה העליונה של הדפדפן</span>
+                    </div>
+                    <div className="flex items-center gap-3 bg-slate-50 rounded-xl p-3">
+                      <span className="text-lg">2️⃣</span>
+                      <span>בחרי <strong>&quot;הוספה למסך הבית&quot;</strong> או <strong>&quot;התקן אפליקציה&quot;</strong></span>
+                    </div>
+                    <div className="flex items-center gap-3 bg-slate-50 rounded-xl p-3">
+                      <span className="text-lg">3️⃣</span>
+                      <span>לחצי <strong>&quot;הוסף&quot;</strong> — וזהו! 🎉</span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-3 bg-slate-50 rounded-xl p-3">
-                    <span className="text-lg">3️⃣</span>
-                    <span>לחצי <strong>&quot;הוסף&quot;</strong> — וזהו! 🎉</span>
-                  </div>
-                </div>
+                )}
                 <button
                   onClick={handleDismiss}
                   className="w-full mt-3 bg-torah-600 text-white px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-torah-700 transition-colors"

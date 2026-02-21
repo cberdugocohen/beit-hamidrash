@@ -42,7 +42,7 @@ export const BADGES: Badge[] = [
   { id: "streak-30", title: "חודש של למידה", description: "30 ימי למידה ברצף", icon: "💪", category: "behavior" },
   { id: "streak-100", title: "מאה ימים", description: "100 ימי למידה ברצף", icon: "🏅", category: "behavior" },
   { id: "marathon", title: "מרתון", description: "5 שיעורים ביום אחד", icon: "🏃", category: "behavior" },
-  { id: "night-owl", title: "לומד לילה", description: "למידה אחרי 22:00", icon: "🌙", category: "behavior" },
+  { id: "night-owl", title: "ינשוף לילה", description: "למידה אחרי 22:00", icon: "🌙", category: "behavior" },
   { id: "early-bird", title: "משכים קום", description: "למידה לפני 06:00", icon: "🌅", category: "behavior" },
   { id: "consistent", title: "מתמיד", description: "למידה 4 שבועות ברציפות", icon: "📚", category: "behavior" },
   { id: "ten-lessons", title: "עשר ומעלה", description: "השלמת 10 שיעורים", icon: "🔟", category: "behavior" },

@@ -55,7 +55,7 @@ function ShellInner({ children }: { children: ReactNode }) {
               <p className="text-lg text-gold-600 font-bold mb-1">
                 רמה {level.level} — {level.name}
               </p>
-              <p className="text-slate-400 text-sm mb-8">המשך כך! אתה בדרך הנכונה</p>
+              <p className="text-slate-400 text-sm mb-8">יישר כוח! בדרך הנכונה</p>
               <button
                 onClick={dismissLevelUp}
                 className="bg-gradient-to-l from-torah-600 to-torah-700 text-white px-8 py-3 rounded-2xl font-semibold hover:shadow-lg hover:shadow-torah-500/20 transition-all"

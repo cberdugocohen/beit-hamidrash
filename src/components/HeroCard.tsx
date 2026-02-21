@@ -61,7 +61,7 @@ export default function HeroCard({
           {currentStreak > 0 && lastActivityDate && lastActivityDate !== todayStr && (
             <div className="mt-3 flex items-center gap-2 bg-orange-500/20 border border-orange-500/20 rounded-lg px-3 py-1.5 w-fit">
               <Flame className="w-4 h-4 text-orange-400 animate-pulse" />
-              <span className="text-xs text-orange-200 font-medium">הרצף שלך בסכנה! למד היום כדי לשמור על {currentStreak} ימים</span>
+              <span className="text-xs text-orange-200 font-medium">הרצף שלך בסכנה! יש ללמוד היום כדי לשמור על {currentStreak} ימים</span>
             </div>
           )}
         </div>

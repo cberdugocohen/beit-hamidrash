@@ -1,11 +1,17 @@
 import { ImageResponse } from "next/og";
+import { readFile } from "fs/promises";
+import path from "path";
 
-export const runtime = "edge";
 export const alt = "בית המדרש קשר השותפות";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
 export default async function OGImage() {
+  // Read logo from public folder
+  const logoPath = path.join(process.cwd(), "public", "logo.png");
+  const logoData = await readFile(logoPath);
+  const logoBase64 = `data:image/png;base64,${logoData.toString("base64")}`;
+
   return new ImageResponse(
     (
       <div
@@ -44,55 +50,31 @@ export default async function OGImage() {
           }}
         />
 
-        {/* Icon */}
-        <div
-          style={{
-            display: "flex",
-            width: 100,
-            height: 100,
-            borderRadius: 24,
-            background: "linear-gradient(135deg, #d4a843, #b8860b)",
-            alignItems: "center",
-            justifyContent: "center",
-            marginBottom: 30,
-            boxShadow: "0 8px 32px rgba(212,168,67,0.3)",
-          }}
-        >
-          <span style={{ fontSize: 52 }}>📖</span>
-        </div>
-
-        {/* Title */}
-        <div
-          style={{
-            fontSize: 56,
-            fontWeight: 800,
-            color: "white",
-            textAlign: "center",
-            lineHeight: 1.2,
-            marginBottom: 12,
-          }}
-        >
-          בית המדרש
-        </div>
-        <div
-          style={{
-            fontSize: 36,
-            fontWeight: 700,
-            color: "#d4a843",
-            textAlign: "center",
-            marginBottom: 24,
-          }}
-        >
-          קשר השותפות
-        </div>
+        {/* Logo */}
+        <img
+          src={logoBase64}
+          width={280}
+          height={280}
+          style={{ borderRadius: 24, marginBottom: 20 }}
+        />
 
         {/* Subtitle */}
         <div
           style={{
-            fontSize: 22,
+            fontSize: 28,
+            fontWeight: 700,
+            color: "white",
+            textAlign: "center",
+            marginBottom: 8,
+          }}
+        >
+          בית המדרש קשר השותפות
+        </div>
+        <div
+          style={{
+            fontSize: 20,
             color: "rgba(255,255,255,0.5)",
             textAlign: "center",
-            maxWidth: 700,
           }}
         >
           שיעורי תורה, דרש, זוהר וחסידות • הרב אסף פלג
