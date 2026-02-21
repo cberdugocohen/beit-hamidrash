@@ -239,7 +239,7 @@ export default function HomePage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const handleSaveMeta = () => {
+  const handleSaveMeta = async () => {
     if (!selectedVideo) return;
     metaStore.setMeta(selectedVideo.id, {
       summary: editSummary || undefined,
@@ -248,8 +248,12 @@ export default function HomePage() {
       presentationUrl: editPresentation || undefined,
     });
     // Also persist to Supabase
-    saveMetaToDB(selectedVideo.id);
-    toast("חומרי השיעור נשמרו בהצלחה");
+    const result = await saveMetaToDB(selectedVideo.id);
+    if (result.ok) {
+      toast("חומרי השיעור נשמרו בהצלחה");
+    } else {
+      toast("שגיאה בשמירה: " + (result.error || "לא ידוע") + " — הנתונים נשמרו מקומית בלבד");
+    }
   };
 
   const handleAutoPresentation = () => {
