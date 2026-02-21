@@ -182,22 +182,6 @@ export default function HomePage() {
     return count;
   }, [store.lessonProgress, todayStr]);
 
-  // Daily challenge: deterministic "lesson of the day" based on date
-  const dailyChallenge = useMemo(() => {
-    if (allVideos.length === 0) return null;
-    // Simple hash from date string to pick a video index
-    const dateStr = todayStr;
-    let hash = 0;
-    for (let i = 0; i < dateStr.length; i++) {
-      hash = ((hash << 5) - hash + dateStr.charCodeAt(i)) | 0;
-    }
-    const idx = Math.abs(hash) % allVideos.length;
-    const video = allVideos[idx];
-    // Skip if already completed today
-    if (store.isLessonCompleted(video.id)) return null;
-    return video;
-  }, [allVideos, todayStr, store]);
-
   // "Continue where you left off"
   const continueVideo = useMemo(() => {
     const progress = store.lessonProgress;
@@ -468,31 +452,6 @@ export default function HomePage() {
           syncStatus={syncStatus}
           syncMsg={syncMsg}
         />
-
-        {/* ── Daily Challenge ── */}
-        {dailyChallenge && !selectedVideo && (
-          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-4">
-            <button
-              onClick={() => handleSelectVideo(dailyChallenge)}
-              className="w-full bg-gradient-to-l from-gold-50 to-amber-50 rounded-2xl border border-gold-200 p-4 text-right hover:shadow-lg hover:border-gold-300 transition-all group"
-            >
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-xl bg-gold-100 flex items-center justify-center group-hover:bg-gold-200 transition-colors">
-                  <Zap className="w-6 h-6 text-gold-600" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-[11px] text-gold-500 mb-0.5 font-bold">⭐ אתגר יומי — השיעור של היום</div>
-                  <div className="text-sm font-bold text-slate-800 truncate">{dailyChallenge.title}</div>
-                  <div className="text-[11px] text-slate-400 mt-0.5 flex items-center gap-1.5">
-                    <span className={`w-2 h-2 rounded-full ${getTopicDot(dailyChallenge.topic)}`} />
-                    {dailyChallenge.topic} • {dailyChallenge.hebDate}
-                  </div>
-                </div>
-                <Play className="w-5 h-5 text-gold-400 shrink-0 group-hover:text-gold-600 transition-colors" />
-              </div>
-            </button>
-          </motion.div>
-        )}
 
         {/* ── Continue Where You Left Off ── */}
         {continueVideo && !selectedVideo && (

@@ -8,7 +8,7 @@ import { getAllVideos, setVideos, isLoaded, Video } from "@/data/content";
 import { useState, useEffect, useCallback } from "react";
 import {
   ShieldCheck, ShieldOff, Users, Search, Loader2, ArrowRight,
-  RefreshCw, Video as VideoIcon, Sparkles, BookOpen, Layers, ImageIcon, Save, Trash2,
+  RefreshCw, Video as VideoIcon, Sparkles, BookOpen, Layers, ImageIcon, Save, Trash2, ArrowRightLeft, Check, X,
 } from "lucide-react";
 import Link from "next/link";
 import { useTopicSettingsStore } from "@/store/topicSettings";
@@ -47,6 +47,9 @@ export default function AdminPage() {
   const { saveTopicImage, removeTopicImage: removeTopicImageDB } = useTopicSettingsSync();
   const [editingTopicImage, setEditingTopicImage] = useState<string | null>(null);
   const [topicImageUrl, setTopicImageUrl] = useState("");
+  const [editingVideoTopic, setEditingVideoTopic] = useState<string | null>(null);
+  const [videoTopicInput, setVideoTopicInput] = useState("");
+  const [savingTopic, setSavingTopic] = useState(false);
 
   const loadUsers = useCallback(async () => {
     setLoading(true);
@@ -134,6 +137,32 @@ export default function AdminPage() {
     } catch {
       toast("שגיאה בהגדרת המערכת");
     }
+  };
+
+  const handleSaveVideoTopic = async (videoId: string, newTopic: string) => {
+    setSavingTopic(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) { toast("לא מחובר"); setSavingTopic(false); return; }
+      const res = await fetch("/api/admin/topic-override", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ videoId, topic: newTopic }),
+      });
+      const json = await res.json();
+      if (json.ok) {
+        // Update local state
+        setLocalVideos((prev) => prev.map((v) => v.id === videoId ? { ...v, topic: newTopic } : v));
+        toast("הנושא עודכן בהצלחה");
+      } else {
+        toast("שגיאה: " + (json.error || "Unknown"));
+      }
+    } catch {
+      toast("שגיאה בשמירת נושא");
+    }
+    setSavingTopic(false);
+    setEditingVideoTopic(null);
   };
 
   const toggleAdmin = async (targetId: string, currentlyAdmin: boolean) => {
@@ -450,21 +479,64 @@ export default function AdminPage() {
               <div className="max-h-[500px] overflow-y-auto">
                 {filteredVideos.slice(0).reverse().map((v, i) => {
                   const isNew = v.date > sevenDaysStr;
+                  const isEditingTopic = editingVideoTopic === v.id;
                   return (
-                    <div key={v.id} className={`flex items-center gap-2 sm:gap-3 px-3 sm:px-5 py-3 text-right ${i > 0 ? "border-t border-slate-50" : ""}`}>
-                      <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center shrink-0">
-                        <BookOpen className="w-4 h-4 text-slate-400" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5">
-                          {isNew && <span className="text-[9px] font-bold bg-emerald-100 text-emerald-600 px-1.5 py-0.5 rounded-full shrink-0">חדש!</span>}
-                          <span className="text-sm text-slate-700 truncate">{v.title}</span>
+                    <div key={v.id} className={`px-3 sm:px-5 py-3 text-right ${i > 0 ? "border-t border-slate-50" : ""}`}>
+                      <div className="flex items-center gap-2 sm:gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center shrink-0">
+                          <BookOpen className="w-4 h-4 text-slate-400" />
                         </div>
-                        <div className="text-[11px] text-slate-400 flex items-center gap-2 mt-0.5">
-                          <span>{v.date}</span>
-                          <span className="text-torah-400 font-medium">{v.topic}</span>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            {isNew && <span className="text-[9px] font-bold bg-emerald-100 text-emerald-600 px-1.5 py-0.5 rounded-full shrink-0">חדש!</span>}
+                            <span className="text-sm text-slate-700 truncate">{v.title}</span>
+                          </div>
+                          <div className="text-[11px] text-slate-400 flex items-center gap-2 mt-0.5">
+                            <span>{v.date}</span>
+                            <span className="text-torah-400 font-medium">{v.topic}</span>
+                          </div>
                         </div>
+                        <button
+                          onClick={() => {
+                            if (isEditingTopic) {
+                              setEditingVideoTopic(null);
+                            } else {
+                              setEditingVideoTopic(v.id);
+                              setVideoTopicInput(v.topic);
+                            }
+                          }}
+                          className="text-slate-300 hover:text-torah-500 transition-colors shrink-0 p-1"
+                          title="שנה נושא"
+                        >
+                          <ArrowRightLeft className="w-3.5 h-3.5" />
+                        </button>
                       </div>
+                      {isEditingTopic && (
+                        <div className="mt-2 mr-10 flex items-center gap-2">
+                          <select
+                            value={videoTopicInput}
+                            onChange={(e) => setVideoTopicInput(e.target.value)}
+                            className="flex-1 text-xs border border-slate-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-torah-300 bg-white"
+                          >
+                            {sortedTopics.map(([topic]) => (
+                              <option key={topic} value={topic}>{topic}</option>
+                            ))}
+                          </select>
+                          <button
+                            onClick={() => handleSaveVideoTopic(v.id, videoTopicInput)}
+                            disabled={savingTopic || videoTopicInput === v.topic}
+                            className="bg-torah-600 text-white px-2 py-1.5 rounded-lg hover:bg-torah-700 transition-colors disabled:opacity-50"
+                          >
+                            <Check className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => setEditingVideoTopic(null)}
+                            className="text-slate-400 hover:text-slate-600 px-1 py-1.5"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      )}
                     </div>
                   );
                 })}
