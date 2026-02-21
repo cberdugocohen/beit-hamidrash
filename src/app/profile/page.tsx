@@ -22,7 +22,7 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (!isLoaded()) {
-      fetch("/videos.json")
+      fetch("/api/videos")
         .then((r) => r.json())
         .then((data: Video[]) => {
           setVideos(data);

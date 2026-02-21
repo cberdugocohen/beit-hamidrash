@@ -75,7 +75,7 @@ function VideoPlayer({
               disabled={!prevVideo}
               className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-torah-600 disabled:opacity-30 disabled:cursor-default transition-colors"
             >
-              <SkipForward className="w-4 h-4" /> הקודם
+              <SkipBack className="w-4 h-4" /> הקודם
             </button>
             <span className="text-[11px] text-slate-400 font-medium">
               שיעור {lessonNum} מתוך {lessonTotal} • {video.topic}
@@ -85,7 +85,7 @@ function VideoPlayer({
               disabled={!nextVideo}
               className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-torah-600 disabled:opacity-30 disabled:cursor-default transition-colors"
             >
-              הבא <SkipBack className="w-4 h-4" />
+              הבא <SkipForward className="w-4 h-4" />
             </button>
           </div>
         </div>
@@ -113,7 +113,6 @@ function VideoPlayer({
                       navigator.share({ title: video.title, url });
                     } else {
                       navigator.clipboard.writeText(url);
-                      alert("הקישור הועתק!");
                     }
                   }}
                   className="text-slate-300 hover:text-torah-500 transition-colors p-1"

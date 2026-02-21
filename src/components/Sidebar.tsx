@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BookOpen, Trophy, User, Flame, ShieldCheck, ChevronLeft, ChevronRight, GraduationCap, LogOut, LogIn, Menu, X, Pencil, Check, Users, Moon, Sun } from "lucide-react";
+import { BookOpen, Trophy, User, Flame, ShieldCheck, ChevronLeft, ChevronRight, GraduationCap, LogOut, LogIn, Menu, X, Pencil, Check, Users } from "lucide-react";
 import { useState } from "react";
 import { useGamificationStore, LEVELS } from "@/store/gamification";
 import { useAuth } from "@/lib/supabase/auth-context";
@@ -18,7 +18,7 @@ const navItems = [
 ];
 
 export default function Sidebar() {
-  const { sidebarCollapsed, sidebarOpen, toggleSidebarCollapsed, setSidebarOpen, darkMode, toggleDarkMode } = useUIStore();
+  const { sidebarCollapsed, sidebarOpen, toggleSidebarCollapsed, setSidebarOpen } = useUIStore();
   const [showAuth, setShowAuth] = useState(false);
   const [editingName, setEditingName] = useState(false);
   const [nameInput, setNameInput] = useState("");
@@ -236,19 +236,11 @@ export default function Sidebar() {
           )}
         </div>
 
-        {/* Dark mode + Collapse toggle */}
-        <div className="border-t border-white/[0.06] flex">
-          <button
-            onClick={toggleDarkMode}
-            className="flex-1 flex items-center justify-center gap-2 p-3 hover:bg-white/[0.04] transition-colors text-white/30 hover:text-white/60"
-            aria-label={darkMode ? "מצב בהיר" : "מצב כהה"}
-          >
-            {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-            {(!collapsed || sidebarOpen) && <span className="text-[11px]">{darkMode ? "בהיר" : "כהה"}</span>}
-          </button>
+        {/* Collapse toggle */}
+        <div className="border-t border-white/[0.06]">
           <button
             onClick={toggleSidebarCollapsed}
-            className="hidden md:flex p-3 hover:bg-white/[0.04] transition-colors items-center justify-center text-white/30 hover:text-white/60 border-r border-white/[0.06]"
+            className="hidden md:flex w-full p-3 hover:bg-white/[0.04] transition-colors items-center justify-center text-white/30 hover:text-white/60"
           >
             {collapsed ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
           </button>

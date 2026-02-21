@@ -145,7 +145,6 @@ export default function HomePage() {
           setSyncStatus("error");
         }
         setTimeout(() => { setSyncStatus("idle"); setSyncMsg(""); }, 5000);
-
       }
     }
     init();
@@ -247,7 +246,6 @@ export default function HomePage() {
     saveMetaToDB(selectedVideo.id);
     toast("חומרי השיעור נשמרו בהצלחה");
   };
-
 
   const handleAutoPresentation = () => {
     if (!editPresentation) return;
@@ -401,7 +399,6 @@ export default function HomePage() {
 
   const currentMeta = selectedVideo ? metaStore.getMeta(selectedVideo.id) : undefined;
   const isAdmin = profile?.is_admin ?? false;
-  const hasAnyResource = currentMeta && (currentMeta.summary || currentMeta.transcriptUrl || currentMeta.quizUrl || currentMeta.presentationUrl);
   const displayName = profile?.display_name || user?.email?.split("@")[0] || store.displayName || "לומד/ת";
 
   return (

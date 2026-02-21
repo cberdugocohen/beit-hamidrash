@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { BookOpen, Calendar, Play, FileText, Download, ClipboardList, Presentation, Share2, ExternalLink, Printer } from "lucide-react";
 
 interface Video {
@@ -22,6 +23,7 @@ interface LessonMeta {
 }
 
 export default function LessonShareContent({ video, meta }: { video: Video; meta: LessonMeta | null }) {
+  const [copied, setCopied] = useState(false);
   const hasSummary = !!meta?.summary;
   const hasResources = meta && (meta.transcript_url || meta.quiz_url || meta.presentation_url);
   const shareUrl = typeof window !== "undefined" ? window.location.href : "";
@@ -36,7 +38,8 @@ export default function LessonShareContent({ video, meta }: { video: Video; meta
       }
     } else {
       await navigator.clipboard.writeText(text + shareUrl);
-      alert("הקישור הועתק!");
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
     }
   };
 
@@ -49,13 +52,16 @@ export default function LessonShareContent({ video, meta }: { video: Video; meta
             <BookOpen className="w-5 h-5" />
             <span className="font-bold text-sm">בית המדרש קשר השותפות</span>
           </a>
-          <button
-            onClick={handleShare}
-            className="flex items-center gap-1.5 bg-torah-600 text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-torah-700 transition-colors"
-          >
-            <Share2 className="w-4 h-4" />
-            שתף
-          </button>
+          <div className="flex items-center gap-2">
+            {copied && <span className="text-xs text-emerald-600 font-medium animate-pulse">הקישור הועתק!</span>}
+            <button
+              onClick={handleShare}
+              className="flex items-center gap-1.5 bg-torah-600 text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-torah-700 transition-colors"
+            >
+              <Share2 className="w-4 h-4" />
+              שתף
+            </button>
+          </div>
         </div>
       </header>
 
