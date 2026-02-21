@@ -15,8 +15,6 @@ interface LessonMetaState {
   meta: Record<string, LessonMeta>;
   setMeta: (videoId: string, data: Partial<LessonMeta>) => void;
   getMeta: (videoId: string) => LessonMeta | undefined;
-  reloadFromDB: (() => void) | null;
-  setReloadFromDB: (fn: () => void) => void;
 }
 
 export const useLessonMetaStore = create<LessonMetaState>()(
@@ -35,9 +33,6 @@ export const useLessonMetaStore = create<LessonMetaState>()(
       },
 
       getMeta: (videoId) => get().meta[videoId],
-
-      reloadFromDB: null,
-      setReloadFromDB: (fn) => set({ reloadFromDB: fn }),
     }),
     {
       name: "lms-lesson-meta",

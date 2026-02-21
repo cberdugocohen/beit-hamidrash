@@ -155,10 +155,6 @@ export default function HomePage() {
               const r = await fetch("/api/auto-transcripts?limit=2");
               const d = await r.json();
               remaining = d.remaining || 0;
-              if (d.generated > 0) {
-                // Reload meta to pick up new transcript URLs
-                metaStore.reloadFromDB?.();
-              }
               if (d.generated === 0 && d.remaining === 0) break;
             }
           } catch { /* background — silent */ }
