@@ -114,7 +114,7 @@ export default function HomePage() {
   const [editQuiz, setEditQuiz] = useState("");
   const [editPresentation, setEditPresentation] = useState("");
 
-  // ── Load videos + auto-sync ──
+  // ── Load videos + meta + auto-sync ──
   useEffect(() => {
     async function init() {
       if (!isLoaded()) {
@@ -125,6 +125,23 @@ export default function HomePage() {
           setDataVersion((v) => v + 1);
         } catch { /* empty */ }
       }
+      // Load lesson meta from DB
+      try {
+        const metaRes = await fetch("/api/lesson-meta");
+        if (metaRes.ok) {
+          const metaJson = await metaRes.json();
+          if (Array.isArray(metaJson.data)) {
+            for (const row of metaJson.data) {
+              metaStore.setMeta(row.video_id, {
+                summary: row.summary || "",
+                transcriptUrl: row.transcript_url || "",
+                quizUrl: row.quiz_url || "",
+                presentationUrl: row.presentation_url || "",
+              });
+            }
+          }
+        }
+      } catch { /* meta load failed, continue */ }
       setLoading(false);
       if (!syncRan.current) {
         syncRan.current = true;
