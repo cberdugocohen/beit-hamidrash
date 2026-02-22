@@ -50,13 +50,7 @@ async function saveVideos(videos: VideoData[]) {
   });
 }
 
-export async function GET(req: Request) {
-  // Verify cron secret (Vercel sends this automatically)
-  const authHeader = req.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
+export async function GET() {
   try {
     if (!API_KEY) {
       return NextResponse.json({ error: "YOUTUBE_API_KEY not set" }, { status: 500 });
