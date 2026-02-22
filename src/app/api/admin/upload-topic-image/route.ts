@@ -40,10 +40,10 @@ export async function POST(req: Request) {
     const supabase = getAdminSupabase();
     await ensureBucket(supabase);
 
-    // Create a safe filename from the topic name
+    // Create a safe ASCII-only filename (Supabase Storage doesn't support Hebrew in keys)
     const ext = file.name.split(".").pop() || "jpg";
-    const safeName = topic.replace(/[^א-תa-zA-Z0-9]/g, "_").substring(0, 50);
-    const fileName = `${safeName}_${Date.now()}.${ext}`;
+    const hash = Array.from(topic).reduce((h, c) => ((h << 5) - h + c.charCodeAt(0)) | 0, 0);
+    const fileName = `topic_${Math.abs(hash)}_${Date.now()}.${ext}`;
 
     const arrayBuffer = await file.arrayBuffer();
     const buffer = new Uint8Array(arrayBuffer);
