@@ -47,6 +47,7 @@ export default function AdminPage() {
   const { saveTopicImage, removeTopicImage: removeTopicImageDB } = useTopicSettingsSync();
   const [editingTopicImage, setEditingTopicImage] = useState<string | null>(null);
   const [topicImageUrl, setTopicImageUrl] = useState("");
+  const [uploadingTopicImage, setUploadingTopicImage] = useState(false);
   const [editingVideoTopic, setEditingVideoTopic] = useState<string | null>(null);
   const [videoTopicInput, setVideoTopicInput] = useState("");
   const [savingTopic, setSavingTopic] = useState(false);
@@ -424,38 +425,82 @@ export default function AdminPage() {
                         </div>
                       </div>
                       {isEditing && (
-                        <div className="mt-2 flex items-center gap-2">
-                          <input
-                            value={topicImageUrl}
-                            onChange={(e) => setTopicImageUrl(e.target.value)}
-                            placeholder="הדבק קישור לתמונה..."
-                            className="flex-1 text-xs border border-slate-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-torah-300"
-                            dir="ltr"
-                          />
-                          <button
-                            onClick={() => {
-                              topicStore.setTopicImage(topic, topicImageUrl);
-                              saveTopicImage(topic, topicImageUrl);
-                              setEditingTopicImage(null);
-                              toast("תמונת נושא נשמרה");
-                            }}
-                            className="bg-torah-600 text-white px-2 py-1.5 rounded-lg hover:bg-torah-700 transition-colors"
-                          >
-                            <Save className="w-3.5 h-3.5" />
-                          </button>
-                          {currentImage && (
+                        <div className="mt-2 space-y-2">
+                          {/* File upload */}
+                          <label className="flex items-center gap-2 cursor-pointer bg-torah-50 border border-torah-200 rounded-lg px-3 py-2 hover:bg-torah-100 transition-colors">
+                            <ImageIcon className="w-4 h-4 text-torah-500" />
+                            <span className="text-xs font-medium text-torah-700">
+                              {uploadingTopicImage ? "מעלה..." : "העלה תמונה מהמחשב"}
+                            </span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              disabled={uploadingTopicImage}
+                              onChange={async (e) => {
+                                const file = e.target.files?.[0];
+                                if (!file) return;
+                                setUploadingTopicImage(true);
+                                try {
+                                  const formData = new FormData();
+                                  formData.append("file", file);
+                                  formData.append("topic", topic);
+                                  const res = await fetch("/api/admin/upload-topic-image", {
+                                    method: "POST",
+                                    body: formData,
+                                  });
+                                  const data = await res.json();
+                                  if (data.url) {
+                                    topicStore.setTopicImage(topic, data.url);
+                                    saveTopicImage(topic, data.url);
+                                    setEditingTopicImage(null);
+                                    toast("תמונת נושא הועלתה בהצלחה!");
+                                  } else {
+                                    toast("שגיאה: " + (data.error || "לא ידוע"));
+                                  }
+                                } catch {
+                                  toast("שגיאה בהעלאת התמונה");
+                                }
+                                setUploadingTopicImage(false);
+                                e.target.value = "";
+                              }}
+                            />
+                          </label>
+                          {/* URL paste fallback */}
+                          <div className="flex items-center gap-2">
+                            <input
+                              value={topicImageUrl}
+                              onChange={(e) => setTopicImageUrl(e.target.value)}
+                              placeholder="או הדבק קישור לתמונה..."
+                              className="flex-1 text-xs border border-slate-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-torah-300"
+                              dir="ltr"
+                            />
                             <button
                               onClick={() => {
-                                topicStore.removeTopicImage(topic);
-                                removeTopicImageDB(topic);
+                                if (!topicImageUrl.trim()) return;
+                                topicStore.setTopicImage(topic, topicImageUrl);
+                                saveTopicImage(topic, topicImageUrl);
                                 setEditingTopicImage(null);
-                                toast("תמונת נושא הוסרה");
+                                toast("תמונת נושא נשמרה");
                               }}
-                              className="bg-red-50 text-red-500 px-2 py-1.5 rounded-lg hover:bg-red-100 transition-colors"
+                              className="bg-torah-600 text-white px-2 py-1.5 rounded-lg hover:bg-torah-700 transition-colors"
                             >
-                              <Trash2 className="w-3.5 h-3.5" />
+                              <Save className="w-3.5 h-3.5" />
                             </button>
-                          )}
+                            {currentImage && (
+                              <button
+                                onClick={() => {
+                                  topicStore.removeTopicImage(topic);
+                                  removeTopicImageDB(topic);
+                                  setEditingTopicImage(null);
+                                  toast("תמונת נושא הוסרה");
+                                }}
+                                className="bg-red-50 text-red-500 px-2 py-1.5 rounded-lg hover:bg-red-100 transition-colors"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </div>
                         </div>
                       )}
                     </div>
