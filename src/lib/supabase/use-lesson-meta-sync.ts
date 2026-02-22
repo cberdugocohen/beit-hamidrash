@@ -19,20 +19,19 @@ export function useLessonMetaSync() {
 
   const isAdmin = profile?.is_admin ?? false;
 
-  // ── Load all lesson meta from DB on mount ──
+  // ── Load all lesson meta from API on mount ──
   const loadAllMeta = useCallback(async () => {
     try {
-      const { data, error } = await supabase
-        .from("lesson_meta")
-        .select("*");
-
-      if (error) {
-        console.warn("lesson_meta load failed:", error.message);
-        return; // Keep local data as-is
+      const res = await fetch("/api/lesson-meta");
+      if (!res.ok) {
+        console.warn("lesson_meta API failed:", res.status);
+        return;
       }
+      const json = await res.json();
+      const rows = json.data;
 
-      if (data && data.length > 0) {
-        for (const row of data) {
+      if (Array.isArray(rows) && rows.length > 0) {
+        for (const row of rows) {
           metaStore.setMeta(row.video_id, {
             summary: row.summary || "",
             transcriptUrl: row.transcript_url || "",
@@ -40,6 +39,7 @@ export function useLessonMetaSync() {
             presentationUrl: row.presentation_url || "",
           });
         }
+        console.log("lesson_meta loaded:", rows.length, "rows");
       }
     } catch (e) {
       console.warn("lesson_meta load error:", e);
