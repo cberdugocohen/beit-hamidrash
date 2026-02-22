@@ -28,6 +28,7 @@ function VideoGroup({
   const groupCompleted = videos.filter((v) => isLessonCompleted(v.id)).length;
   const isAllDone = groupCompleted === videos.length && videos.length > 0;
   const pct = videos.length > 0 ? Math.round((groupCompleted / videos.length) * 100) : 0;
+  const topicImage = groupMode === "topic" ? getTopicImage?.(groupKey) : undefined;
 
   return (
     <motion.div
@@ -37,15 +38,53 @@ function VideoGroup({
       transition={{ delay: Math.min(animationDelay, 0.3) }}
       className={`bg-white rounded-2xl border overflow-hidden transition-colors ${isAllDone ? "border-emerald-200" : "border-slate-200"}`}
     >
-      <button
-        onClick={() => onToggle(groupKey)}
-        className="w-full px-5 py-4 flex items-center justify-between hover:bg-slate-50/50 transition-colors"
-        aria-label={`${isCollapsed ? "פתח" : "סגור"} ${groupKey}`}
-      >
-        <div className="flex items-center gap-3">
-          {groupMode === "topic" && getTopicImage?.(groupKey) ? (
-            <img src={getTopicImage(groupKey)!} alt={groupKey} className="w-10 h-10 rounded-xl object-cover shrink-0" />
-          ) : (
+      {/* Topic card with large image */}
+      {groupMode === "topic" && topicImage ? (
+        <button
+          onClick={() => onToggle(groupKey)}
+          className="w-full relative overflow-hidden group"
+          aria-label={`${isCollapsed ? "פתח" : "סגור"} ${groupKey}`}
+        >
+          <div className="relative h-36 sm:h-44">
+            <img src={topicImage} alt={groupKey} className="w-full h-full object-cover" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
+            <div className="absolute bottom-0 right-0 left-0 p-4 sm:p-5">
+              <div className="flex items-end justify-between">
+                <div className="text-right">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className={`w-2.5 h-2.5 rounded-full ${getTopicDot(groupKey)}`} />
+                    <h2 className="font-bold text-white text-lg sm:text-xl drop-shadow-lg">{groupKey}</h2>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs text-white/80">{videos.length} שיעורים</span>
+                    {groupCompleted > 0 && (
+                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${isAllDone ? "bg-emerald-400/90 text-white" : "bg-white/20 text-white/90"}`}>
+                        {groupCompleted}/{videos.length} הושלמו
+                      </span>
+                    )}
+                  </div>
+                  {/* Progress bar */}
+                  {groupCompleted > 0 && (
+                    <div className="w-32 sm:w-48 bg-white/20 rounded-full h-1.5 mt-2 overflow-hidden">
+                      <div className={`h-full rounded-full transition-all duration-500 ${isAllDone ? "bg-emerald-400" : "bg-white/80"}`} style={{ width: `${pct}%` }} />
+                    </div>
+                  )}
+                </div>
+                <div className="text-white/60 group-hover:text-white transition-colors">
+                  {isCollapsed ? <ChevronDown className="w-6 h-6" /> : <ChevronUp className="w-6 h-6" />}
+                </div>
+              </div>
+            </div>
+          </div>
+        </button>
+      ) : (
+        /* Default header (no image or date mode) */
+        <button
+          onClick={() => onToggle(groupKey)}
+          className="w-full px-5 py-4 flex items-center justify-between hover:bg-slate-50/50 transition-colors"
+          aria-label={`${isCollapsed ? "פתח" : "סגור"} ${groupKey}`}
+        >
+          <div className="flex items-center gap-3">
             <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isAllDone ? "bg-emerald-100" : "bg-torah-50"}`}>
               {groupMode === "topic" ? (
                 <BookOpen className={`w-5 h-5 ${isAllDone ? "text-emerald-600" : "text-torah-400"}`} />
@@ -53,27 +92,27 @@ function VideoGroup({
                 <Calendar className={`w-5 h-5 ${isAllDone ? "text-emerald-600" : "text-torah-400"}`} />
               )}
             </div>
-          )}
-          <div className="text-right">
-            <div className="flex items-center gap-2">
-              {groupMode === "topic" && <span className={`w-2.5 h-2.5 rounded-full ${getTopicDot(groupKey)}`} />}
-              <h2 className="font-bold text-slate-800 text-[15px]">{groupKey}</h2>
+            <div className="text-right">
+              <div className="flex items-center gap-2">
+                {groupMode === "topic" && <span className={`w-2.5 h-2.5 rounded-full ${getTopicDot(groupKey)}`} />}
+                <h2 className="font-bold text-slate-800 text-[15px]">{groupKey}</h2>
+              </div>
+              <span className="text-xs text-slate-400">{videos.length} שיעורים</span>
             </div>
-            <span className="text-xs text-slate-400">{videos.length} שיעורים</span>
           </div>
-        </div>
-        <div className="flex items-center gap-4">
-          {groupCompleted > 0 && (
-            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${isAllDone ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
-              {groupCompleted}/{videos.length}
-            </span>
-          )}
-          <div className="hidden sm:block w-20 bg-slate-100 rounded-full h-2 overflow-hidden">
-            <div className={`h-full rounded-full transition-all duration-500 ${isAllDone ? "bg-emerald-400" : "bg-torah-400"}`} style={{ width: `${pct}%` }} />
+          <div className="flex items-center gap-4">
+            {groupCompleted > 0 && (
+              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${isAllDone ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
+                {groupCompleted}/{videos.length}
+              </span>
+            )}
+            <div className="hidden sm:block w-20 bg-slate-100 rounded-full h-2 overflow-hidden">
+              <div className={`h-full rounded-full transition-all duration-500 ${isAllDone ? "bg-emerald-400" : "bg-torah-400"}`} style={{ width: `${pct}%` }} />
+            </div>
+            {isCollapsed ? <ChevronDown className="w-5 h-5 text-slate-300" /> : <ChevronUp className="w-5 h-5 text-slate-300" />}
           </div>
-          {isCollapsed ? <ChevronDown className="w-5 h-5 text-slate-300" /> : <ChevronUp className="w-5 h-5 text-slate-300" />}
-        </div>
-      </button>
+        </button>
+      )}
 
       {!isCollapsed && (
         <div className="border-t border-slate-100">
