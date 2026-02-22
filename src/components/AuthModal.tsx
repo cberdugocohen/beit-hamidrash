@@ -65,7 +65,8 @@ export default function AuthModal({ open, onClose }: { open: boolean; onClose: (
       if (result.error) {
         setError(translateError(result.error));
       } else {
-        setSuccess("נרשמת בהצלחה! בדוק את המייל לאימות.");
+        // Auto-logged in after signup, close modal
+        onClose();
       }
     } else {
       const result = await signIn(email, password);

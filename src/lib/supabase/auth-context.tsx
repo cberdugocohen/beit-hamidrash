@@ -113,15 +113,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [fetchProfile]);
 
   const signUp = async (email: string, password: string, displayName: string) => {
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { display_name: displayName },
-      },
-    });
-    if (error) return { error: error.message };
-    return {};
+    try {
+      // Use custom API that auto-confirms (no email verification needed)
+      const res = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password, displayName }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        return { error: data.error || "שגיאה בהרשמה" };
+      }
+      // Auto-login after successful signup
+      const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+      if (signInError) return { error: signInError.message };
+      return {};
+    } catch {
+      return { error: "שגיאה בהרשמה, נסה שוב" };
+    }
   };
 
   const signIn = async (email: string, password: string) => {
