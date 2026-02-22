@@ -191,12 +191,12 @@ function VideoPlayer({
                   </div>
                 )}
                 {currentMeta?.summary && (
-                  <div className="p-3 rounded-xl bg-gold-50/50 border border-gold-200/50">
+                  <div className="p-3 rounded-xl bg-amber-50 border border-amber-200">
                     <div className="flex items-center gap-2 mb-2">
-                      <ClipboardList className="w-4 h-4 text-gold-600" />
-                      <span className="text-sm font-semibold text-gold-700">סיכום השיעור</span>
+                      <ClipboardList className="w-4 h-4 text-amber-600" />
+                      <span className="text-sm font-semibold text-amber-800">סיכום השיעור</span>
                     </div>
-                    <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">{currentMeta.summary}</p>
+                    <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{currentMeta.summary}</p>
                   </div>
                 )}
                 {currentMeta?.quizUrl && (
