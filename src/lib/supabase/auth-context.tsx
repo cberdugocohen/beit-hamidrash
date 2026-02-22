@@ -140,12 +140,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signInWithGoogle = async () => {
-    await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}`,
-      },
-    });
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: window.location.origin,
+        },
+      });
+      if (error) {
+        console.error("Google OAuth error:", error.message);
+        alert("שגיאה בכניסה עם Google: " + error.message);
+      } else if (data?.url) {
+        // Manually redirect (fallback if auto-redirect doesn't work on mobile)
+        window.location.href = data.url;
+      }
+    } catch (e) {
+      console.error("Google OAuth exception:", e);
+      alert("שגיאה בכניסה עם Google");
+    }
   };
 
   const signOut = async () => {
