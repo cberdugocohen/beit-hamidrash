@@ -338,6 +338,18 @@ export default function HomePage() {
     if (groupMode === "topic") {
       keys = activeFilter ? [activeFilter] : [...topics];
       grouped = videosByTopic;
+      // Sort: topics with images first, then by newest video date within each group
+      if (!activeFilter) {
+        keys.sort((a, b) => {
+          const aHasImage = topicSettingsStore.getTopicImage(a) ? 1 : 0;
+          const bHasImage = topicSettingsStore.getTopicImage(b) ? 1 : 0;
+          if (aHasImage !== bHasImage) return bHasImage - aHasImage; // images first
+          // Within same group, sort by newest video date (descending)
+          const aNewest = grouped.get(a)?.reduce((max, v) => v.date > max ? v.date : max, "") || "";
+          const bNewest = grouped.get(b)?.reduce((max, v) => v.date > max ? v.date : max, "") || "";
+          return bNewest.localeCompare(aNewest);
+        });
+      }
     } else {
       keys = [...hebMonths].reverse();
       grouped = videosByHebMonth;
@@ -383,7 +395,7 @@ export default function HomePage() {
       }
     }
     return { groupKeys: keys, groupedVideos: grouped, hiddenCount: hidden };
-  }, [groupMode, search, activeFilter, topics, hebMonths, videosByTopic, videosByHebMonth, showAllTopics, smartTopics, hideCompleted, store]);
+  }, [groupMode, search, activeFilter, topics, hebMonths, videosByTopic, videosByHebMonth, showAllTopics, smartTopics, hideCompleted, store, topicSettingsStore]);
 
   const totalFiltered = useMemo(() => {
     let c = 0;
