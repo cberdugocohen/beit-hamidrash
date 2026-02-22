@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { createServerSupabase } from "@/lib/supabase/server";
 
 function getAdminSupabase() {
   return createClient(
@@ -18,13 +17,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const userSupabase = await createServerSupabase();
-    const { data: { user } } = await userSupabase.auth.getUser(token);
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const adminSupabase = getAdminSupabase();
+
+    // Verify user token using admin client
+    const { data: { user }, error: authError } = await adminSupabase.auth.getUser(token);
+    if (authError || !user) {
+      return NextResponse.json({ error: "Unauthorized: " + (authError?.message || "no user") }, { status: 401 });
+    }
     const { data: profile } = await adminSupabase
       .from("profiles")
       .select("is_admin")
