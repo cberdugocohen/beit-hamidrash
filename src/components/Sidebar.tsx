@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BookOpen, Trophy, User, Flame, ShieldCheck, ChevronLeft, ChevronRight, GraduationCap, LogOut, LogIn, Menu, X, Pencil, Check, Users } from "lucide-react";
+import { BookOpen, Trophy, User, Flame, ShieldCheck, ChevronLeft, ChevronRight, GraduationCap, LogOut, LogIn, Menu, X, Pencil, Check, Users, RefreshCw } from "lucide-react";
 import { useState } from "react";
 import { useGamificationStore, LEVELS } from "@/store/gamification";
 import { useAuth } from "@/lib/supabase/auth-context";
@@ -25,7 +25,7 @@ export default function Sidebar() {
   const [showAdminPanel, setShowAdminPanel] = useState(false);
   const pathname = usePathname();
   const { xp, currentStreak, getLevel, getLevelProgress } = useGamificationStore();
-  const { user, profile, signOut, updateProfile, loading: authLoading } = useAuth();
+  const { user, profile, signOut, updateProfile, loading: authLoading, refreshProfile } = useAuth();
   const level = getLevel();
   const levelProgress = getLevelProgress();
   const nextLevel = LEVELS.find((l) => l.level === level.level + 1);
@@ -216,6 +216,15 @@ export default function Sidebar() {
                   <Users className="w-4 h-4 shrink-0" />
                   {(!collapsed || sidebarOpen) && <span className="font-medium">ניהול משתמשים</span>}
                 </Link>
+              )}
+              {!profile && user && (
+                <button
+                  onClick={() => refreshProfile()}
+                  className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-amber-300/70 hover:text-amber-300 hover:bg-amber-500/10 transition-all"
+                >
+                  <RefreshCw className="w-4 h-4 shrink-0" />
+                  {(!collapsed || sidebarOpen) && <span>טען פרופיל מחדש</span>}
+                </button>
               )}
               <button
                 onClick={() => signOut()}

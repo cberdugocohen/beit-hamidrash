@@ -40,25 +40,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchProfile = useCallback(async (userId: string) => {
-    const { data } = await supabase
+  const fetchProfile = useCallback(async (userId: string, retryCount = 0) => {
+    const { data, error } = await supabase
       .from("profiles")
       .select("*")
       .eq("id", userId)
       .single();
-    if (!data) return;
+
+    if (error || !data) {
+      console.warn("fetchProfile failed:", error?.message || "no data", "retry:", retryCount);
+      // Retry once after 2 seconds
+      if (retryCount < 2) {
+        await new Promise((r) => setTimeout(r, 2000));
+        return fetchProfile(userId, retryCount + 1);
+      }
+      return;
+    }
 
     // If display_name is empty, try to fill it from Google user metadata
     if (!data.display_name || data.display_name === "") {
-      const { data: { user: authUser } } = await supabase.auth.getUser();
-      const meta = authUser?.user_metadata;
-      const googleName = meta?.full_name || meta?.name || meta?.display_name || "";
-      if (googleName) {
-        await supabase
-          .from("profiles")
-          .update({ display_name: googleName, updated_at: new Date().toISOString() })
-          .eq("id", userId);
-        data.display_name = googleName;
+      try {
+        const { data: { user: authUser } } = await supabase.auth.getUser();
+        const meta = authUser?.user_metadata;
+        const googleName = meta?.full_name || meta?.name || meta?.display_name || "";
+        if (googleName) {
+          await supabase
+            .from("profiles")
+            .update({ display_name: googleName, updated_at: new Date().toISOString() })
+            .eq("id", userId);
+          data.display_name = googleName;
+        }
+      } catch {
+        // Not critical, continue
       }
     }
 
