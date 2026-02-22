@@ -1,5 +1,4 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
 
 export interface LessonMeta {
   videoId: string;
@@ -18,24 +17,19 @@ interface LessonMetaState {
 }
 
 export const useLessonMetaStore = create<LessonMetaState>()(
-  persist(
-    (set, get) => ({
-      meta: {},
+  (set, get) => ({
+    meta: {},
 
-      setMeta: (videoId, data) => {
-        const existing = get().meta[videoId] || { videoId };
-        set({
-          meta: {
-            ...get().meta,
-            [videoId]: { ...existing, ...data, updatedAt: new Date().toISOString() },
-          },
-        });
-      },
+    setMeta: (videoId, data) => {
+      const existing = get().meta[videoId] || { videoId };
+      set({
+        meta: {
+          ...get().meta,
+          [videoId]: { ...existing, ...data, updatedAt: new Date().toISOString() },
+        },
+      });
+    },
 
-      getMeta: (videoId) => get().meta[videoId],
-    }),
-    {
-      name: "lms-lesson-meta",
-    }
-  )
+    getMeta: (videoId) => get().meta[videoId],
+  })
 );
