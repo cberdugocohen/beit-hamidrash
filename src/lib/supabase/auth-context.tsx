@@ -98,7 +98,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, s) => {
+      async (event, s) => {
+        console.log("[Auth] Event:", event, "user:", s?.user?.email ?? "none");
+
+        // If token refresh failed (session gone), try to recover
+        if (event === "TOKEN_REFRESHED" && !s) {
+          console.warn("[Auth] Token refresh returned no session, attempting recovery...");
+          try {
+            const { data } = await supabase.auth.getSession();
+            if (data.session) {
+              console.log("[Auth] Session recovered successfully");
+              setSession(data.session);
+              setUser(data.session.user);
+              await fetchProfile(data.session.user.id);
+              return;
+            }
+          } catch (e) {
+            console.error("[Auth] Session recovery failed:", e);
+          }
+        }
+
         setSession(s);
         setUser(s?.user ?? null);
         if (s?.user) {
@@ -175,7 +194,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const refreshProfile = async () => {
-    if (user) await fetchProfile(user.id);
+    console.log("[Auth] refreshProfile called, current user:", user?.email ?? "none");
+    // If user is gone, try to restore session first
+    if (!user) {
+      try {
+        const { data: { session: s } } = await supabase.auth.getSession();
+        if (s?.user) {
+          console.log("[Auth] Session restored for:", s.user.email);
+          setSession(s);
+          setUser(s.user);
+          await fetchProfile(s.user.id);
+          return;
+        }
+      } catch (e) {
+        console.error("[Auth] Session restore failed:", e);
+      }
+      return;
+    }
+    await fetchProfile(user.id);
   };
 
   return (
