@@ -36,13 +36,10 @@ export default async function OGImage({ params }: { params: Promise<{ id: string
   const topic = video?.topic || "";
   const hebDate = video?.hebDate || "";
 
-  // Load Hebrew font for correct RTL rendering (static weight, small file)
+  // Load Hebrew font bundled locally (Vercel recommended approach for edge)
   const fontData = await fetch(
-    "https://cdn.jsdelivr.net/gh/nicholasgasior/gfonts@master/fonts/heebo/Heebo-Bold.ttf"
-  ).then((res) => {
-    if (!res.ok) throw new Error("Font fetch failed: " + res.status);
-    return res.arrayBuffer();
-  });
+    new URL("./Heebo-Bold.ttf", import.meta.url)
+  ).then((res) => res.arrayBuffer());
 
   return new ImageResponse(
     (
