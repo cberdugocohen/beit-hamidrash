@@ -28,6 +28,23 @@ async function loadVideos(): Promise<Video[]> {
   return [];
 }
 
+// Satori doesn't support RTL — reverse Hebrew text so the LTR render produces correct output
+function reverseHebrew(text: string): string {
+  // Split into segments: Hebrew words vs non-Hebrew (numbers, punctuation, latin)
+  const segments = text.split(/(\s+)/);
+  // Reverse word order and reverse each Hebrew segment
+  return segments
+    .reverse()
+    .map((seg) => {
+      // If segment is Hebrew characters, reverse the characters
+      if (/[\u0590-\u05FF]/.test(seg)) {
+        return [...seg].reverse().join("");
+      }
+      return seg;
+    })
+    .join("");
+}
+
 export default async function OGImage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const videos = await loadVideos();
@@ -41,6 +58,13 @@ export default async function OGImage({ params }: { params: Promise<{ id: string
     new URL("./Heebo-Bold.ttf", import.meta.url)
   ).then((res) => res.arrayBuffer());
 
+  // Pre-reverse all Hebrew strings for correct Satori rendering
+  const rTitle = reverseHebrew(title);
+  const rTopic = reverseHebrew(topic);
+  const rHebDate = reverseHebrew(hebDate);
+  const rSiteName = reverseHebrew("בית המדרש קשר השותפות");
+  const rAuthor = reverseHebrew("הרב אסף פלג");
+
   return new ImageResponse(
     (
       <div
@@ -50,16 +74,15 @@ export default async function OGImage({ params }: { params: Promise<{ id: string
           display: "flex",
           flexDirection: "column",
           background: "linear-gradient(135deg, #1e3a5f 0%, #152352 50%, #1a2d4a 100%)",
-          fontFamily: "NotoSansHebrew",
-          direction: "rtl",
+          fontFamily: "Heebo",
           padding: 60,
         }}
       >
         {/* Top bar */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 16, marginBottom: 40 }}>
-          <div style={{ display: "flex", flexDirection: "column", textAlign: "right" }}>
-            <span style={{ fontSize: 20, color: "white", fontWeight: 700 }}>בית המדרש קשר השותפות</span>
-            <span style={{ fontSize: 14, color: "rgba(255,255,255,0.4)" }}>הרב אסף פלג</span>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
+            <span style={{ fontSize: 20, color: "white", fontWeight: 700 }}>{rSiteName}</span>
+            <span style={{ fontSize: 14, color: "rgba(255,255,255,0.4)" }}>{rAuthor}</span>
           </div>
           <div
             style={{
@@ -83,6 +106,7 @@ export default async function OGImage({ params }: { params: Promise<{ id: string
             display: "flex",
             flexDirection: "column",
             justifyContent: "center",
+            alignItems: "flex-end",
           }}
         >
           <div
@@ -95,7 +119,7 @@ export default async function OGImage({ params }: { params: Promise<{ id: string
               maxWidth: 1000,
             }}
           >
-            {title}
+            {rTitle}
           </div>
         </div>
 
@@ -103,7 +127,7 @@ export default async function OGImage({ params }: { params: Promise<{ id: string
         <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 20, marginTop: 30 }}>
           {hebDate && (
             <div style={{ fontSize: 18, color: "rgba(255,255,255,0.4)" }}>
-              {hebDate}
+              {rHebDate}
             </div>
           )}
           {topic && (
@@ -118,7 +142,7 @@ export default async function OGImage({ params }: { params: Promise<{ id: string
                 fontWeight: 600,
               }}
             >
-              {topic}
+              {rTopic}
             </div>
           )}
         </div>
@@ -140,10 +164,10 @@ export default async function OGImage({ params }: { params: Promise<{ id: string
       ...size,
       fonts: [
         {
-          name: "NotoSansHebrew",
+          name: "Heebo",
           data: fontData,
           style: "normal",
-          weight: 400,
+          weight: 700,
         },
       ],
     }
