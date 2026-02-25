@@ -36,6 +36,11 @@ export default async function OGImage({ params }: { params: Promise<{ id: string
   const topic = video?.topic || "";
   const hebDate = video?.hebDate || "";
 
+  // Load Hebrew font for correct RTL rendering
+  const fontData = await fetch(
+    "https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/notosanshebrew/NotoSansHebrew%5Bwdth%2Cwght%5D.ttf"
+  ).then((res) => res.arrayBuffer());
+
   return new ImageResponse(
     (
       <div
@@ -45,12 +50,17 @@ export default async function OGImage({ params }: { params: Promise<{ id: string
           display: "flex",
           flexDirection: "column",
           background: "linear-gradient(135deg, #1e3a5f 0%, #152352 50%, #1a2d4a 100%)",
-          fontFamily: "Arial, sans-serif",
+          fontFamily: "NotoSansHebrew",
+          direction: "rtl",
           padding: 60,
         }}
       >
         {/* Top bar */}
-        <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 40 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 16, marginBottom: 40 }}>
+          <div style={{ display: "flex", flexDirection: "column", textAlign: "right" }}>
+            <span style={{ fontSize: 20, color: "white", fontWeight: 700 }}>בית המדרש קשר השותפות</span>
+            <span style={{ fontSize: 14, color: "rgba(255,255,255,0.4)" }}>הרב אסף פלג</span>
+          </div>
           <div
             style={{
               width: 56,
@@ -63,10 +73,6 @@ export default async function OGImage({ params }: { params: Promise<{ id: string
             }}
           >
             <span style={{ fontSize: 30 }}>📖</span>
-          </div>
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            <span style={{ fontSize: 20, color: "white", fontWeight: 700 }}>בית המדרש קשר השותפות</span>
-            <span style={{ fontSize: 14, color: "rgba(255,255,255,0.4)" }}>הרב אסף פלג</span>
           </div>
         </div>
 
@@ -82,10 +88,9 @@ export default async function OGImage({ params }: { params: Promise<{ id: string
           <div
             style={{
               fontSize: title.length > 60 ? 38 : 48,
-              fontWeight: 800,
+              fontWeight: 700,
               color: "white",
               lineHeight: 1.3,
-              direction: "rtl",
               textAlign: "right",
               maxWidth: 1000,
             }}
@@ -95,7 +100,12 @@ export default async function OGImage({ params }: { params: Promise<{ id: string
         </div>
 
         {/* Bottom meta */}
-        <div style={{ display: "flex", alignItems: "center", gap: 20, marginTop: 30 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 20, marginTop: 30 }}>
+          {hebDate && (
+            <div style={{ fontSize: 18, color: "rgba(255,255,255,0.4)" }}>
+              {hebDate}
+            </div>
+          )}
           {topic && (
             <div
               style={{
@@ -109,11 +119,6 @@ export default async function OGImage({ params }: { params: Promise<{ id: string
               }}
             >
               {topic}
-            </div>
-          )}
-          {hebDate && (
-            <div style={{ fontSize: 18, color: "rgba(255,255,255,0.4)" }}>
-              {hebDate}
             </div>
           )}
         </div>
@@ -131,6 +136,16 @@ export default async function OGImage({ params }: { params: Promise<{ id: string
         />
       </div>
     ),
-    { ...size }
+    {
+      ...size,
+      fonts: [
+        {
+          name: "NotoSansHebrew",
+          data: fontData,
+          style: "normal",
+          weight: 400,
+        },
+      ],
+    }
   );
 }

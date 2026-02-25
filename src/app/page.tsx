@@ -258,18 +258,23 @@ export default function HomePage() {
 
   const handleSaveMeta = async () => {
     if (!selectedVideo) return;
-    metaStore.setMeta(selectedVideo.id, {
-      summary: editSummary || undefined,
-      transcriptUrl: editTranscript || undefined,
-      quizUrl: editQuiz || undefined,
-      presentationUrl: editPresentation || undefined,
-    });
-    // Also persist to Supabase
-    const result = await saveMetaToDB(selectedVideo.id);
-    if (result.ok) {
-      toast("חומרי השיעור נשמרו בהצלחה");
-    } else {
-      toast("שגיאה בשמירה: " + (result.error || "לא ידוע") + " — הנתונים נשמרו מקומית בלבד");
+    try {
+      metaStore.setMeta(selectedVideo.id, {
+        summary: editSummary || undefined,
+        transcriptUrl: editTranscript || undefined,
+        quizUrl: editQuiz || undefined,
+        presentationUrl: editPresentation || undefined,
+      });
+      // Also persist to Supabase
+      const result = await saveMetaToDB(selectedVideo.id);
+      if (result.ok) {
+        toast("חומרי השיעור נשמרו בהצלחה");
+      } else {
+        toast("שגיאה בשמירה: " + (result.error || "לא ידוע") + " — הנתונים נשמרו מקומית בלבד");
+      }
+    } catch (e) {
+      console.error("[SaveMeta] Unexpected error:", e);
+      toast("שגיאה לא צפויה בשמירה — נסי שוב");
     }
   };
 
