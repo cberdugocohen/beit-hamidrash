@@ -36,10 +36,13 @@ export default async function OGImage({ params }: { params: Promise<{ id: string
   const topic = video?.topic || "";
   const hebDate = video?.hebDate || "";
 
-  // Load Hebrew font for correct RTL rendering
+  // Load Hebrew font for correct RTL rendering (static weight, small file)
   const fontData = await fetch(
-    "https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/notosanshebrew/NotoSansHebrew%5Bwdth%2Cwght%5D.ttf"
-  ).then((res) => res.arrayBuffer());
+    "https://cdn.jsdelivr.net/gh/nicholasgasior/gfonts@master/fonts/heebo/Heebo-Bold.ttf"
+  ).then((res) => {
+    if (!res.ok) throw new Error("Font fetch failed: " + res.status);
+    return res.arrayBuffer();
+  });
 
   return new ImageResponse(
     (
