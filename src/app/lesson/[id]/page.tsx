@@ -1,5 +1,5 @@
 import { Metadata } from "next";
-import { createServerSupabase } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/server";
 import { createClient } from "@supabase/supabase-js";
 import fs from "fs";
 import path from "path";
@@ -59,10 +59,10 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     return { title: "שיעור לא נמצא - בית המדרש קשר השותפות" };
   }
 
-  // Try to get summary from Supabase
+  // Try to get summary from Supabase (use admin client to bypass RLS)
   let summary = "";
   try {
-    const supabase = await createServerSupabase();
+    const supabase = createAdminClient();
     const { data } = await supabase
       .from("lesson_meta")
       .select("summary")
@@ -110,10 +110,10 @@ export default async function LessonPage({ params }: { params: Promise<{ id: str
     );
   }
 
-  // Fetch lesson meta from Supabase
+  // Fetch lesson meta from Supabase (use admin client to bypass RLS)
   let meta: LessonMeta | null = null;
   try {
-    const supabase = await createServerSupabase();
+    const supabase = createAdminClient();
     const { data } = await supabase
       .from("lesson_meta")
       .select("*")
