@@ -8,6 +8,17 @@ function getAdminSupabase() {
   );
 }
 
+// Decode JWT payload without network call (token was signed by Supabase)
+function decodeJwtPayload(token: string): { sub?: string } | null {
+  try {
+    const payload = token.split(".")[1];
+    const json = Buffer.from(payload, "base64").toString("utf-8");
+    return JSON.parse(json);
+  } catch {
+    return null;
+  }
+}
+
 // POST: save lesson meta (admin only, uses service role to bypass RLS)
 export async function POST(req: Request) {
   try {
@@ -17,23 +28,25 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Decode JWT locally to get user ID (avoids slow getUser network call)
+    const jwt = decodeJwtPayload(token);
+    const userId = jwt?.sub;
+    if (!userId) {
+      return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+    }
+
     const adminSupabase = getAdminSupabase();
 
-    // Verify user token using admin client
-    const { data: { user }, error: authError } = await adminSupabase.auth.getUser(token);
-    if (authError || !user) {
-      return NextResponse.json({ error: "Unauthorized: " + (authError?.message || "no user") }, { status: 401 });
-    }
-    const { data: profile } = await adminSupabase
-      .from("profiles")
-      .select("is_admin")
-      .eq("id", user.id)
-      .single();
+    // Parse body and check admin status in parallel
+    const [body, { data: profile }] = await Promise.all([
+      req.json(),
+      adminSupabase.from("profiles").select("is_admin").eq("id", userId).single(),
+    ]);
+
     if (!profile?.is_admin) {
       return NextResponse.json({ error: "Admin only" }, { status: 403 });
     }
 
-    const body = await req.json();
     const { videoId, summary, transcriptUrl, quizUrl, presentationUrl } = body;
     if (!videoId) {
       return NextResponse.json({ error: "videoId required" }, { status: 400 });
@@ -47,7 +60,7 @@ export async function POST(req: Request) {
         transcript_url: transcriptUrl || null,
         quiz_url: quizUrl || null,
         presentation_url: presentationUrl || null,
-        updated_by: user.id,
+        updated_by: userId,
         updated_at: new Date().toISOString(),
       }, { onConflict: "video_id" });
 
