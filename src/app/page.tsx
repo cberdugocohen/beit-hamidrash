@@ -113,6 +113,7 @@ export default function HomePage() {
   const [editTranscript, setEditTranscript] = useState("");
   const [editQuiz, setEditQuiz] = useState("");
   const [editPresentation, setEditPresentation] = useState("");
+  const [saving, setSaving] = useState(false);
 
   // ── Load videos + meta + auto-sync ──
   useEffect(() => {
@@ -257,8 +258,10 @@ export default function HomePage() {
   };
 
   const handleSaveMeta = async () => {
-    if (!selectedVideo) return;
+    if (!selectedVideo || saving) return;
+    setSaving(true);
     try {
+      console.log("[SaveMeta] Saving for video:", selectedVideo.id);
       metaStore.setMeta(selectedVideo.id, {
         summary: editSummary || undefined,
         transcriptUrl: editTranscript || undefined,
@@ -267,14 +270,17 @@ export default function HomePage() {
       });
       // Also persist to Supabase
       const result = await saveMetaToDB(selectedVideo.id);
+      console.log("[SaveMeta] Result:", result);
       if (result.ok) {
-        toast("חומרי השיעור נשמרו בהצלחה");
+        toast("חומרי השיעור נשמרו בהצלחה ✓");
       } else {
-        toast("שגיאה בשמירה: " + (result.error || "לא ידוע") + " — הנתונים נשמרו מקומית בלבד");
+        toast("שגיאה בשמירה: " + (result.error || "לא ידוע"));
       }
     } catch (e) {
       console.error("[SaveMeta] Unexpected error:", e);
       toast("שגיאה לא צפויה בשמירה — נסי שוב");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -566,6 +572,7 @@ export default function HomePage() {
               onEditQuiz={setEditQuiz}
               onEditPresentation={setEditPresentation}
               onSaveMeta={handleSaveMeta}
+              saving={saving}
               onAutoPresentation={handleAutoPresentation}
               onComplete={handleComplete}
               onSelect={handleSelectVideo}

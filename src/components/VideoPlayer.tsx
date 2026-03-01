@@ -33,6 +33,7 @@ interface VideoPlayerProps {
   onEditQuiz: (v: string) => void;
   onEditPresentation: (v: string) => void;
   onSaveMeta: () => void;
+  saving?: boolean;
   onAutoPresentation?: () => void;
   onComplete: (id: string) => void;
   onSelect: (v: Video) => void;
@@ -44,7 +45,7 @@ function VideoPlayer({
   video, isCompleted, prevVideo, nextVideo, lessonNum, lessonTotal,
   currentMeta, isAdmin, editSummary, editTranscript, editQuiz, editPresentation,
   onEditSummary, onEditTranscript, onEditQuiz, onEditPresentation,
-  onSaveMeta, onAutoPresentation,
+  onSaveMeta, saving, onAutoPresentation,
   onComplete, onSelect, onClose, getTopicDot,
 }: VideoPlayerProps) {
   const hasAnyResource = currentMeta && (currentMeta.summary || currentMeta.transcriptUrl || currentMeta.quizUrl || currentMeta.presentationUrl);
@@ -108,7 +109,7 @@ function VideoPlayer({
               <div className="flex items-center gap-1">
                 <button
                   onClick={() => {
-                    const url = `${window.location.origin}/lesson/${video.videoId}`;
+                    const url = `${window.location.origin}/lesson/${video.id}`;
                     if (navigator.share) {
                       navigator.share({ title: video.title, url });
                     } else {
@@ -237,8 +238,12 @@ function VideoPlayer({
                     </button>
                   )}
                 </div>
-                <button onClick={onSaveMeta} className="flex items-center gap-2 bg-torah-600 hover:bg-torah-700 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors w-full justify-center">
-                  <Save className="w-4 h-4" /> שמור
+                <button onClick={onSaveMeta} disabled={saving} className="flex items-center gap-2 bg-torah-600 hover:bg-torah-700 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors w-full justify-center disabled:opacity-60 disabled:cursor-wait">
+                  {saving ? (
+                    <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> שומר...</>
+                  ) : (
+                    <><Save className="w-4 h-4" /> שמור</>
+                  )}
                 </button>
               </div>
             )}
