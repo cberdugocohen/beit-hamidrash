@@ -1,118 +1,83 @@
-import { ImageResponse } from "next/og";
 import { createClient } from "@supabase/supabase-js";
 
 export const runtime = "edge";
 export const alt = "בית המדרש קשר השותפות";
 export const size = { width: 1200, height: 630 };
-export const contentType = "image/png";
+export const contentType = "image/jpeg";
 
 interface Video {
   id: string;
   videoId: string;
-  title: string;
   topic: string;
-  hebDate: string;
 }
 
 type SettingsMap = Record<string, { image_url?: string }>;
 
-function getSupabase() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-}
-
-async function loadVideos(): Promise<Video[]> {
+async function loadTopicImage(videoYtId: string): Promise<string | null> {
   try {
-    const supabase = getSupabase();
-    const { data } = await supabase.storage.from("data").download("videos.json");
-    if (data) {
-      const text = await data.text();
-      return JSON.parse(text);
-    }
-  } catch { /* fall through */ }
-  return [];
-}
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
 
-async function loadTopicSettings(): Promise<SettingsMap> {
-  try {
-    const supabase = getSupabase();
-    const { data } = await supabase.storage.from("data").download("topic-settings.json");
-    if (data) {
-      const text = await data.text();
-      return JSON.parse(text);
-    }
-  } catch { /* fall through */ }
-  return {};
+    // Load videos to find the topic for this video
+    const { data: videosBlob } = await supabase.storage.from("data").download("videos.json");
+    if (!videosBlob) return null;
+    const videos: Video[] = JSON.parse(await videosBlob.text());
+    const video = videos.find((v) => v.id === videoYtId);
+    if (!video?.topic) return null;
+
+    // Load topic settings
+    const { data: settingsBlob } = await supabase.storage.from("data").download("topic-settings.json");
+    if (!settingsBlob) return null;
+    const settings: SettingsMap = JSON.parse(await settingsBlob.text());
+    return settings[video.topic]?.image_url || null;
+  } catch {
+    return null;
+  }
 }
 
 export default async function OGImage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const videos = await loadVideos();
-  const video = videos.find((v) => v.id === id);
-  const topic = video?.topic || "";
-  const videoId = video?.videoId || "";
 
-  // Try to get topic image from settings
-  const settings = await loadTopicSettings();
-  const topicImageUrl = topic ? settings[topic]?.image_url : undefined;
+  // Try topic image first
+  const topicImageUrl = await loadTopicImage(id);
 
-  // Use topic image if available, otherwise YouTube thumbnail
-  const imageUrl = topicImageUrl || (videoId ? `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg` : "");
+  // Build ordered list of image URLs to try
+  const urls = [
+    topicImageUrl,
+    `https://img.youtube.com/vi/${id}/maxresdefault.jpg`,
+    `https://img.youtube.com/vi/${id}/hqdefault.jpg`,
+  ].filter(Boolean) as string[];
 
-  if (imageUrl) {
-    // Render the image filling the OG canvas
-    return new ImageResponse(
-      (
-        <div
-          style={{
-            width: "100%",
-            height: "100%",
-            display: "flex",
-            position: "relative",
-          }}
-        >
-          <img
-            src={imageUrl}
-            width={1200}
-            height={630}
-            style={{ objectFit: "cover", width: "100%", height: "100%" }}
-          />
-        </div>
-      ),
-      { ...size }
-    );
+  for (const url of urls) {
+    try {
+      const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
+      if (res.ok) {
+        const contentType = res.headers.get("content-type") || "image/jpeg";
+        const buffer = await res.arrayBuffer();
+        // YouTube returns a tiny placeholder for missing maxresdefault — skip if < 5KB
+        if (buffer.byteLength < 5000 && url.includes("maxresdefault")) continue;
+        return new Response(buffer, {
+          headers: {
+            "Content-Type": contentType,
+            "Cache-Control": "public, max-age=86400, s-maxage=86400",
+          },
+        });
+      }
+    } catch {
+      continue;
+    }
   }
 
-  // Fallback: simple gradient with logo emoji (no Hebrew text to avoid RTL issues)
-  return new ImageResponse(
-    (
-      <div
-        style={{
-          width: "100%",
-          height: "100%",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          background: "linear-gradient(135deg, #1e3a5f 0%, #152352 50%, #1a2d4a 100%)",
-        }}
-      >
-        <div
-          style={{
-            width: 120,
-            height: 120,
-            borderRadius: 32,
-            background: "linear-gradient(135deg, #d4a843, #b8860b)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <span style={{ fontSize: 64 }}>📖</span>
-        </div>
-      </div>
-    ),
-    { ...size }
-  );
+  // Final fallback: 1x1 transparent pixel (should never reach here)
+  const pixel = new Uint8Array([
+    0x47, 0x49, 0x46, 0x38, 0x39, 0x61, 0x01, 0x00, 0x01, 0x00, 0x00, 0x00,
+    0x00, 0x21, 0xf9, 0x04, 0x01, 0x00, 0x00, 0x00, 0x00, 0x2c, 0x00, 0x00,
+    0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0x02, 0x02, 0x44, 0x01, 0x00,
+    0x3b,
+  ]);
+  return new Response(pixel, {
+    headers: { "Content-Type": "image/gif" },
+  });
 }
