@@ -2,18 +2,10 @@
 
 import { useEffect, useRef, useCallback } from "react";
 import { useAuth } from "./auth-context";
-import { createClient } from "./client";
 import { useLessonMetaStore } from "@/store/lessonMeta";
 
-/**
- * Syncs lesson meta (summaries, links) with Supabase.
- * - On mount: load all lesson meta from DB into local store
- * - On admin save: write to DB (if user is admin)
- */
-const supabase = createClient();
-
 export function useLessonMetaSync() {
-  const { user, profile } = useAuth();
+  const { user, session, profile } = useAuth();
   const metaStore = useLessonMetaStore();
   const loadedRef = useRef(false);
 
@@ -57,13 +49,15 @@ export function useLessonMetaSync() {
   const saveMetaToDB = useCallback(async (videoId: string): Promise<{ ok: boolean; error?: string }> => {
     if (!user || !isAdmin) return { ok: false, error: "אין הרשאת אדמין" };
 
+    const token = session?.access_token;
+    if (!token) return { ok: false, error: "לא מחובר — נסי לרענן את הדף" };
+
     const meta = metaStore.getMeta(videoId);
     if (!meta) return { ok: false, error: "אין נתונים לשמור" };
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token;
-      if (!token) return { ok: false, error: "לא מחובר" };
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 10000);
 
       const res = await fetch("/api/admin/lesson-meta", {
         method: "POST",
@@ -78,17 +72,22 @@ export function useLessonMetaSync() {
           quizUrl: meta.quizUrl || "",
           presentationUrl: meta.presentationUrl || "",
         }),
+        signal: controller.signal,
       });
 
+      clearTimeout(timeout);
       const json = await res.json();
       if (json.ok) return { ok: true };
       return { ok: false, error: json.error || "שגיאה לא ידועה" };
     } catch (e) {
+      if (e instanceof DOMException && e.name === "AbortError") {
+        return { ok: false, error: "השמירה נמשכה יותר מדי זמן — נסי שוב" };
+      }
       const msg = e instanceof Error ? e.message : "שגיאה לא ידועה";
       console.error("lesson_meta save error:", msg);
       return { ok: false, error: msg };
     }
-  }, [user, isAdmin, metaStore]);
+  }, [user, session, isAdmin, metaStore]);
 
   return { saveMetaToDB, isAdmin };
 }
