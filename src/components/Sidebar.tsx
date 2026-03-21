@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BookOpen, Trophy, User, Flame, ShieldCheck, ChevronLeft, ChevronRight, GraduationCap, LogOut, LogIn, Menu, X, Pencil, Check, Users, RefreshCw } from "lucide-react";
+import { BookOpen, Trophy, User, Flame, ShieldCheck, ChevronLeft, ChevronRight, GraduationCap, LogOut, LogIn, Menu, X, Pencil, Check, Users, RefreshCw, ClipboardList } from "lucide-react";
 import { useState } from "react";
 import { useGamificationStore, LEVELS } from "@/store/gamification";
 import { useAuth } from "@/lib/supabase/auth-context";
@@ -13,6 +13,7 @@ import AuthModal from "./AuthModal";
 
 const navItems = [
   { href: "/", label: "שיעורים", icon: BookOpen },
+  { href: "/worksheets", label: "כרטיסיות עבודה", icon: ClipboardList },
   { href: "/achievements", label: "הישגים", icon: Trophy },
   { href: "/profile", label: "פרופיל", icon: User },
 ];
