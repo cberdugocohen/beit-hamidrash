@@ -8,7 +8,7 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
-  ImageIcon,
+  FileText,
   Loader2,
   Share2,
 } from "lucide-react";
@@ -140,7 +140,7 @@ export default function WorksheetsPage() {
         {/* Empty state */}
         {!loading && parshas.length === 0 && (
           <div className="text-center py-20 text-slate-400">
-            <ImageIcon className="w-12 h-12 mx-auto mb-4 opacity-40" />
+            <FileText className="w-12 h-12 mx-auto mb-4 opacity-40" />
             <p>אין כרטיסיות עדיין</p>
           </div>
         )}
@@ -187,10 +187,10 @@ export default function WorksheetsPage() {
                             href={card.summaryUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="w-8 h-8 rounded-lg bg-blue-50 text-blue-500 hover:bg-blue-100 flex items-center justify-center transition-colors"
-                            title="סיכום"
+                            className="w-8 h-8 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 flex items-center justify-center transition-colors"
+                            title="סיכום PDF"
                           >
-                            <ImageIcon className="w-4 h-4" />
+                            <FileText className="w-4 h-4" />
                           </a>
                         )}
                         {card.audioUrl && (

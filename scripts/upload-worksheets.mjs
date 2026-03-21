@@ -110,12 +110,32 @@ async function ensureBucket(name) {
   }
 }
 
+// ── MIME types ──
+const MIME_MAP = {
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".pdf": "application/pdf",
+  ".mp3": "audio/mpeg",
+  ".m4a": "audio/mp4",
+  ".wav": "audio/wav",
+  ".ogg": "audio/ogg",
+};
+
+// ── Find file with any extension ──
+function findFile(folder, baseName, extensions) {
+  for (const ext of extensions) {
+    const filePath = path.join(folder, `${baseName}${ext}`);
+    if (fs.existsSync(filePath)) return { path: filePath, ext };
+  }
+  return null;
+}
+
 // ── Upload a file ──
 async function uploadFile(bucket, storagePath, localPath) {
   const buffer = fs.readFileSync(localPath);
   const ext = path.extname(localPath).toLowerCase();
-  const mimeMap = { ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".pdf": "application/pdf" };
-  const contentType = mimeMap[ext] || "application/octet-stream";
+  const contentType = MIME_MAP[ext] || "application/octet-stream";
 
   const { error } = await supabase.storage.from(bucket).upload(storagePath, buffer, {
     contentType,
@@ -144,23 +164,50 @@ async function main() {
       cards: [],
     };
 
-    // Upload card images
+    // Upload card images + optional PDF/audio
+    const IMAGE_EXTS = [".png", ".jpg", ".jpeg"];
+    const PDF_EXTS = [".pdf"];
+    const AUDIO_EXTS = [".mp3", ".m4a", ".wav", ".ogg"];
+
     for (const card of parsha.cards) {
-      const localFile = path.join(parsha.folder, `${card.num}.png`);
-      const storageKey = `${parsha.slug}_${card.num}.png`;
-      if (fs.existsSync(localFile)) {
-        await uploadFile(BUCKET, storageKey, localFile);
-        const { data: urlData } = supabase.storage.from(BUCKET).getPublicUrl(storageKey);
-        parshaData.cards.push({
-          num: card.num,
-          title: card.title,
-          imageUrl: urlData.publicUrl,
-          summaryUrl: card.summaryUrl || null,
-          audioUrl: card.audioUrl || null,
-        });
-      } else {
-        console.error(`  ✗ File not found: ${localFile}`);
+      // Find and upload card image
+      const imgFile = findFile(parsha.folder, String(card.num), IMAGE_EXTS);
+      if (!imgFile) {
+        console.error(`  ✗ Image not found for card ${card.num}`);
+        continue;
       }
+
+      const imgKey = `${parsha.slug}_${card.num}${imgFile.ext}`;
+      await uploadFile(BUCKET, imgKey, imgFile.path);
+      const { data: imgUrl } = supabase.storage.from(BUCKET).getPublicUrl(imgKey);
+
+      // Find and upload PDF (optional)
+      let pdfUrl = null;
+      const pdfFile = findFile(parsha.folder, String(card.num), PDF_EXTS);
+      if (pdfFile) {
+        const pdfKey = `${parsha.slug}_${card.num}.pdf`;
+        await uploadFile(BUCKET, pdfKey, pdfFile.path);
+        const { data: url } = supabase.storage.from(BUCKET).getPublicUrl(pdfKey);
+        pdfUrl = url.publicUrl;
+      }
+
+      // Find and upload audio (optional)
+      let audioUrl = null;
+      const audioFile = findFile(parsha.folder, String(card.num), AUDIO_EXTS);
+      if (audioFile) {
+        const audioKey = `${parsha.slug}_${card.num}${audioFile.ext}`;
+        await uploadFile(BUCKET, audioKey, audioFile.path);
+        const { data: url } = supabase.storage.from(BUCKET).getPublicUrl(audioKey);
+        audioUrl = url.publicUrl;
+      }
+
+      parshaData.cards.push({
+        num: card.num,
+        title: card.title,
+        imageUrl: imgUrl.publicUrl,
+        summaryUrl: pdfUrl,
+        audioUrl: audioUrl,
+      });
     }
 
     manifest.parshas.push(parshaData);
