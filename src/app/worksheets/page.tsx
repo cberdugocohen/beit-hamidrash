@@ -12,8 +12,6 @@ import {
   Loader2,
   Share2,
 } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
-
 interface Card {
   num: number;
   title: string;
@@ -32,14 +30,13 @@ interface WorksheetsData {
   parshas: Parsha[];
 }
 
-const supabase = createClient();
+const WORKSHEETS_URL = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/data/worksheets.json`;
 
 async function loadWorksheets(): Promise<WorksheetsData | null> {
   try {
-    const { data } = await supabase.storage.from("data").download("worksheets.json");
-    if (data) {
-      const text = await data.text();
-      return JSON.parse(text);
+    const res = await fetch(WORKSHEETS_URL, { cache: "no-store" });
+    if (res.ok) {
+      return res.json();
     }
   } catch {
     /* fall through */
