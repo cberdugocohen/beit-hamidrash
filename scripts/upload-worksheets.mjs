@@ -41,7 +41,7 @@ const PARSHAS = [
   {
     slug: "mishpatim",
     name: "דרש פרשת משפטים",
-    folder: "C:\\Users\\w\\Downloads\\דרש משפטים לאורך",
+    folder: "C:\\Users\\w\\Downloads\\דרש משפטים",
     cards: [
       { num: 1, title: "האוזן הרוחנית" },
       { num: 2, title: "פינוי מקום לשמיעה" },
@@ -96,6 +96,18 @@ const PARSHAS = [
       { num: 3, title: "תודעת שבת · בחינת הריח" },
       { num: 4, title: "זיכוך ה\"פרא\" · דרגות האכילה" },
       { num: 5, title: "לא תבערו אש" },
+    ],
+  },
+  {
+    slug: "vayikra",
+    name: "דרש פרשת ויקרא",
+    folder: "C:\\Users\\w\\Downloads\\דרש ויקרא",
+    cards: [
+      { num: 1, title: "ה-א' הזעירה: ענווה כהסתגלות לאמת" },
+      { num: 2, title: "חיבור המוח והלב: מהפרט אל הכלל" },
+      { num: 3, title: "הזוהר משנה דנ\"א רוחני" },
+      { num: 4, title: "מבנה רוחני של מאה ברכות" },
+      { num: 5, title: "מעשה בהמה: העלאת החומר לקדושה" },
     ],
   },
 ];
